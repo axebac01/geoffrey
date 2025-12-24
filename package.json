@@ -1,0 +1,35 @@
+{
+  "name": "geoffrey-mvp",
+  "version": "1.0.0",
+  "description": "\\# Geoffrey.ai — GEO Micro SaaS (Improved MVP Plan)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-cli": "ts-node src/test-cli.ts",
+    "server": "ts-node src/server.ts",
+    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
+    "frontend": "cd frontend && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@google/generative-ai": "^0.24.1",
+    "@types/node": "^25.0.3",
+    "axios": "^1.13.2",
+    "body-parser": "^2.2.1",
+    "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "openai": "^6.15.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "concurrently": "^9.2.1"
+  }
+}
