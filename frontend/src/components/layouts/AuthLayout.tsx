@@ -1,4 +1,5 @@
 import React from 'react';
+import { SignOutButton, useAuth } from '@clerk/clerk-react';
 
 interface Stat {
     value: string;
@@ -56,6 +57,7 @@ export function AuthLayout({
     showTestimonials = true
 }: AuthLayoutProps) {
     const [currentTestimonial, setCurrentTestimonial] = React.useState(0);
+    const { isSignedIn } = useAuth();
 
     React.useEffect(() => {
         if (showTestimonials) {
@@ -65,6 +67,15 @@ export function AuthLayout({
             return () => clearInterval(interval);
         }
     }, [showTestimonials]);
+
+    // Clear sessionStorage when user signs out
+    React.useEffect(() => {
+        if (!isSignedIn) {
+            sessionStorage.removeItem('onboarding_company');
+            sessionStorage.removeItem('onboarding_scan_result');
+            sessionStorage.removeItem('onboarding_final');
+        }
+    }, [isSignedIn]);
 
     return (
         <div style={{
@@ -257,8 +268,40 @@ export function AuthLayout({
                 justifyContent: 'center',
                 alignItems: 'center',
                 padding: '3rem',
-                background: '#0d1117'
+                background: '#0d1117',
+                position: 'relative'
             }}>
+                {/* Log out button - top right */}
+                {isSignedIn && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '1.5rem',
+                        right: '1.5rem'
+                    }}>
+                        <SignOutButton>
+                            <button style={{
+                                padding: '0.5rem 1rem',
+                                background: 'rgba(48, 54, 61, 0.5)',
+                                border: '1px solid #30363d',
+                                borderRadius: '6px',
+                                color: '#c9d1d9',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(48, 54, 61, 0.7)';
+                                e.currentTarget.style.borderColor = '#f85149';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(48, 54, 61, 0.5)';
+                                e.currentTarget.style.borderColor = '#30363d';
+                            }}>
+                                Log out
+                            </button>
+                        </SignOutButton>
+                    </div>
+                )}
                 <div style={{ width: '100%', maxWidth: '400px' }}>
                     {title && (
                         <div style={{ marginBottom: '2rem', textAlign: 'center' }}>

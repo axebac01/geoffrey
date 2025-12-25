@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { AuthLayout } from '../../components/layouts/AuthLayout';
 
 const scanningSteps = [
-    { id: 1, label: 'Fetching website content', icon: '🌐' },
-    { id: 2, label: 'Analyzing business information', icon: '🔍' },
-    { id: 3, label: 'Identifying market positioning', icon: '📊' },
-    { id: 4, label: 'Detecting competitors', icon: '🏢' },
-    { id: 5, label: 'Generating AI prompts', icon: '✨' },
+    { id: 1, label: 'Fetching website content', icon: '🌐', estimatedTime: 2 },
+    { id: 2, label: 'Analyzing business & generating prompts', icon: '🔍', estimatedTime: 7 },
+    { id: 3, label: 'Finding competitors', icon: '🏢', estimatedTime: 6 },
+    { id: 4, label: 'Validating competitors', icon: '✅', estimatedTime: 5 },
 ];
 
 export function ScanningStep() {
@@ -16,11 +15,25 @@ export function ScanningStep() {
     const { getToken } = useAuth();
     const [currentStep, setCurrentStep] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const [scanComplete, setScanComplete] = useState(false);
+    const scanStarted = useRef(false);
 
     useEffect(() => {
-        async function checkStep() {
+        async function checkStepAndScan() {
+            if (scanStarted.current) return;
+            scanStarted.current = true;
+            
             try {
+                // Get token ONCE at the start
                 const token = await getToken();
+                
+                if (!token) {
+                    console.error('No token available');
+                    navigate('/onboarding/company');
+                    return;
+                }
+
+                // Check onboarding status
                 const res = await fetch('/api/onboarding/status', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -35,33 +48,60 @@ export function ScanningStep() {
                         return;
                     }
                 }
+
+                // Get company data from backend
+                const companyRes = await fetch('/api/onboarding/company-data', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (companyRes.ok) {
+                    const companyDataResult = await companyRes.json();
+                    if (companyDataResult.companyData?.website) {
+                        performScan(companyDataResult.companyData.website);
+                        return;
+                    }
+                }
+
+                // If we can't get website, redirect to company step
+                navigate('/onboarding/company');
             } catch (error) {
                 console.error('Failed to check onboarding status:', error);
+                setError('Failed to initialize scan. Please try again.');
             }
-
-            // Check sessionStorage as fallback
-            const companyData = sessionStorage.getItem('onboarding_company');
-            if (!companyData) {
-                navigate('/onboarding/company');
-                return;
-            }
-
-            const { website } = JSON.parse(companyData);
-            performScan(website);
         }
 
-        checkStep();
+        checkStepAndScan();
     }, [navigate, getToken]);
 
     useEffect(() => {
-        // Animate through steps
+        // Animate through steps based on estimated times
+        // But the LAST step only completes when scanComplete is true
         if (currentStep < scanningSteps.length) {
+            const isLastStep = currentStep === scanningSteps.length - 1;
+            
+            // If it's the last step and scan isn't complete, wait
+            if (isLastStep && !scanComplete) {
+                return;
+            }
+            
+            const step = scanningSteps[currentStep];
+            const estimatedTime = (step.estimatedTime || 4) * 1000; // Convert to milliseconds
+            
             const timer = setTimeout(() => {
                 setCurrentStep((prev) => prev + 1);
-            }, 3000); // Each step takes about 3 seconds
+            }, estimatedTime);
             return () => clearTimeout(timer);
         }
-    }, [currentStep]);
+    }, [currentStep, scanComplete]);
+
+    // When scan completes and we're on the last step, navigate after a short delay
+    useEffect(() => {
+        if (scanComplete && currentStep >= scanningSteps.length) {
+            setTimeout(() => {
+                navigate('/onboarding/review');
+            }, 500);
+        }
+    }, [scanComplete, currentStep, navigate]);
 
     const performScan = async (url: string) => {
         try {
@@ -83,8 +123,15 @@ export function ScanningStep() {
 
             const data = await res.json();
             
-            // Store scan results for review step
-            sessionStorage.setItem('onboarding_scan_result', JSON.stringify(data));
+            // Store scan results in backend for review step
+            await fetch('/api/onboarding/scan-result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ scanData: data })
+            });
             
             // Update onboarding progress
             await fetch('/api/onboarding/status', {
@@ -99,10 +146,8 @@ export function ScanningStep() {
                 })
             });
             
-            // Navigate to review after animation completes
-            setTimeout(() => {
-                navigate('/onboarding/review');
-            }, 1000);
+            // Mark scan as complete - this triggers the last step to finish
+            setScanComplete(true);
         } catch (err: any) {
             console.error('Scan error:', err);
             setError(err.message || 'Failed to scan website');
@@ -116,9 +161,9 @@ export function ScanningStep() {
             leftHeadline="Deep analysis in progress"
             leftDescription="Our AI is extracting business information, identifying market positioning, detecting competitors, and generating strategic prompts for AI visibility testing."
             leftStats={[
-                { value: '6', label: 'analysis passes' },
-                { value: '100%', label: 'AI-powered' },
-                { value: 'Real-time', label: 'results' }
+                { value: '3', label: 'AI passes' },
+                { value: '~20s', label: 'thorough analysis' },
+                { value: '100%', label: 'AI-powered' }
             ]}
             showTestimonials={false}
         >
@@ -151,23 +196,80 @@ export function ScanningStep() {
                     </div>
                 ) : (
                     <>
-                        {/* Animated spinner */}
+                        {/* Futuristic AI Scanner Animation */}
                         <div style={{
                             display: 'flex',
                             justifyContent: 'center',
-                            marginBottom: '2rem'
+                            alignItems: 'center',
+                            marginBottom: '2rem',
+                            height: '120px'
                         }}>
-                            <div style={{
-                                width: '80px',
-                                height: '80px',
-                                border: '3px solid rgba(48, 54, 61, 0.5)',
-                                borderTopColor: '#58a6ff',
-                                borderRadius: '50%',
-                                animation: 'spin 1s linear infinite'
-                            }} />
+                            <div style={{ position: 'relative', width: '100px', height: '100px' }}>
+                                {/* Outer pulsing ring */}
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    borderRadius: '50%',
+                                    border: '2px solid rgba(88, 166, 255, 0.3)',
+                                    animation: 'pulse-outer 2s ease-in-out infinite'
+                                }} />
+                                {/* Middle rotating ring */}
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: '10px',
+                                    borderRadius: '50%',
+                                    border: '2px solid transparent',
+                                    borderTopColor: '#58a6ff',
+                                    borderRightColor: '#bc8cf2',
+                                    animation: 'spin 1.5s linear infinite'
+                                }} />
+                                {/* Inner breathing circle */}
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: '20px',
+                                    borderRadius: '50%',
+                                    background: 'radial-gradient(circle, rgba(88, 166, 255, 0.2) 0%, rgba(188, 140, 242, 0.1) 100%)',
+                                    animation: 'breathe 2s ease-in-out infinite'
+                                }} />
+                                {/* Center glow */}
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: '35px',
+                                    borderRadius: '50%',
+                                    background: 'radial-gradient(circle, rgba(88, 166, 255, 0.8) 0%, rgba(88, 166, 255, 0) 70%)',
+                                    animation: 'glow 1.5s ease-in-out infinite alternate'
+                                }} />
+                                {/* Scanning line */}
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    width: '50px',
+                                    height: '2px',
+                                    background: 'linear-gradient(90deg, transparent, #58a6ff, transparent)',
+                                    transformOrigin: '0 0',
+                                    animation: 'scan-line 2s linear infinite'
+                                }} />
+                            </div>
                             <style>{`
                                 @keyframes spin {
                                     to { transform: rotate(360deg); }
+                                }
+                                @keyframes pulse-outer {
+                                    0%, 100% { transform: scale(1); opacity: 0.5; }
+                                    50% { transform: scale(1.15); opacity: 1; }
+                                }
+                                @keyframes breathe {
+                                    0%, 100% { transform: scale(0.9); opacity: 0.5; }
+                                    50% { transform: scale(1.1); opacity: 1; }
+                                }
+                                @keyframes glow {
+                                    0% { opacity: 0.5; transform: scale(0.8); }
+                                    100% { opacity: 1; transform: scale(1.2); }
+                                }
+                                @keyframes scan-line {
+                                    0% { transform: rotate(0deg); }
+                                    100% { transform: rotate(360deg); }
                                 }
                             `}</style>
                         </div>
@@ -177,6 +279,7 @@ export function ScanningStep() {
                             {scanningSteps.map((step, index) => {
                                 const isActive = index === currentStep;
                                 const isComplete = index < currentStep;
+                                const isWaiting = index === currentStep && index === scanningSteps.length - 1 && !scanComplete;
                                 
                                 return (
                                     <div
@@ -228,6 +331,7 @@ export function ScanningStep() {
                                             transition: 'color 0.3s ease'
                                         }}>
                                             {step.label}
+                                            {isWaiting && <span style={{ color: '#8b949e', marginLeft: '0.5rem' }}>(finishing...)</span>}
                                         </span>
                                         {isActive && (
                                             <div style={{
@@ -251,7 +355,7 @@ export function ScanningStep() {
                             fontSize: '0.85rem',
                             marginTop: '2rem'
                         }}>
-                            This usually takes 20-30 seconds
+                            {scanComplete ? 'Analysis complete! Preparing results...' : 'This usually takes 20-30 seconds'}
                         </p>
                     </>
                 )}

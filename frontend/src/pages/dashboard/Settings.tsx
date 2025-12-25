@@ -569,7 +569,8 @@ export function SettingsPage() {
 
             {/* Profile Tab */}
             {activeTab === 'profile' && (
-                <section className="card" style={{ padding: '1.5rem' }}>
+                <>
+                    <section className="card" style={{ padding: '1.5rem' }}>
                     <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '1.5rem' }}>👤</span>
                         Your Profile
@@ -630,6 +631,65 @@ export function SettingsPage() {
                         </div>
                     </div>
                 </section>
+
+                {/* Reset Onboarding for Testing - More Prominent */}
+                <section className="card" style={{ 
+                    padding: '1.5rem', 
+                    marginTop: '2rem',
+                    background: 'rgba(88, 166, 255, 0.05)',
+                    border: '2px solid rgba(88, 166, 255, 0.3)'
+                }}>
+                    <h2 style={{ 
+                        fontSize: '1.2rem', 
+                        marginBottom: '0.5rem', 
+                        color: '#58a6ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <span style={{ fontSize: '1.5rem' }}>🧪</span>
+                        Testing Tools
+                    </h2>
+                    <p style={{ color: '#8b949e', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                        Reset your onboarding to test the flow again. This will clear your onboarding progress and allow you to go through the setup process from the beginning.
+                    </p>
+                    <button
+                        onClick={async () => {
+                            if (!confirm('Are you sure you want to reset onboarding? This will clear your onboarding progress and you will need to complete it again.')) {
+                                return;
+                            }
+                            try {
+                                const token = await getToken();
+                                const res = await fetch('/api/onboarding/reset', {
+                                    method: 'POST',
+                                    headers: { Authorization: `Bearer ${token}` }
+                                });
+                                if (res.ok) {
+                                    alert('Onboarding reset! Redirecting to onboarding...');
+                                    window.location.href = '/onboarding/company';
+                                } else {
+                                    setError('Failed to reset onboarding');
+                                }
+                            } catch (err) {
+                                setError('Failed to reset onboarding');
+                            }
+                        }}
+                        style={{
+                            padding: '1rem 1.5rem',
+                            background: 'rgba(88, 166, 255, 0.2)',
+                            border: '1px solid rgba(88, 166, 255, 0.4)',
+                            borderRadius: '8px',
+                            color: '#58a6ff',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            fontWeight: 600,
+                            width: '100%'
+                        }}
+                    >
+                        🔄 Reset Onboarding & Start Over
+                    </button>
+                </section>
+                </>
             )}
 
             {/* Data & Privacy Tab */}

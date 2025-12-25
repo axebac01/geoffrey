@@ -229,7 +229,29 @@ CREATE POLICY "Users can manage their own onboarding"
   USING (user_id IS NOT NULL);
 
 -- ============================================
--- 9. Initial Data Setup
+-- 9. Onboarding Scan Results Table
+-- Stores scan results during onboarding (replaces sessionStorage)
+-- ============================================
+CREATE TABLE IF NOT EXISTS onboarding_scan_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  scan_data JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_onboarding_scan_results_user_id ON onboarding_scan_results(user_id);
+
+-- Enable RLS
+ALTER TABLE onboarding_scan_results ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policy
+DROP POLICY IF EXISTS "Users can manage their own scan results" ON onboarding_scan_results;
+CREATE POLICY "Users can manage their own scan results" 
+  ON onboarding_scan_results FOR ALL 
+  USING (user_id = auth.uid()::text) WITH CHECK (user_id = auth.uid()::text);
+
+-- ============================================
+-- 10. Initial Data Setup
 -- ============================================
 -- No initial data needed - tables will be populated by the application
 

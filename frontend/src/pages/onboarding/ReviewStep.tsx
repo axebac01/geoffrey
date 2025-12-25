@@ -45,7 +45,16 @@ export function ReviewStep() {
     useEffect(() => {
         async function checkStep() {
             try {
+                // Get token ONCE at the start
                 const token = await getToken();
+                
+                if (!token) {
+                    console.error('No token available');
+                    navigate('/onboarding/company');
+                    return;
+                }
+
+                // Check onboarding status
                 const res = await fetch('/api/onboarding/status', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -60,38 +69,46 @@ export function ReviewStep() {
                         return;
                     }
                 }
+
+                // Get scan result from backend
+                const scanRes = await fetch('/api/onboarding/scan-result', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (scanRes.ok) {
+                    const scanData = await scanRes.json();
+                    if (scanData.scanResult?.scan_data) {
+                        const result: ScanResult = scanData.scanResult.scan_data;
+                        setScanResult(result);
+                        setSnapshot(result.snapshot);
+                        setCompetitors(result.suggestedCompetitors || []);
+                        setPrompts(result.suggestedPrompts || []);
+                        
+                        // Initialize company description from snapshot
+                        if (result.snapshot.companyDescription) {
+                            setCompanyDescription(result.snapshot.companyDescription);
+                        } else {
+                            // Fallback to basic data
+                            setCompanyDescription({
+                                ...defaultCompanyDescription,
+                                overview: result.snapshot.description || '',
+                                productsAndServices: result.snapshot.descriptionSpecs || [],
+                                practicalDetails: {
+                                    website: result.snapshot.website || '',
+                                    contact: '',
+                                    positioningNote: result.snapshot.industry || ''
+                                }
+                            });
+                        }
+                        return;
+                    }
+                }
+
+                // If we can't get scan result, redirect to company step
+                navigate('/onboarding/company');
             } catch (error) {
                 console.error('Failed to check onboarding status:', error);
-            }
-
-            // Check sessionStorage as fallback
-            const storedResult = sessionStorage.getItem('onboarding_scan_result');
-            if (!storedResult) {
                 navigate('/onboarding/company');
-                return;
-            }
-
-            const result: ScanResult = JSON.parse(storedResult);
-            setScanResult(result);
-            setSnapshot(result.snapshot);
-            setCompetitors(result.suggestedCompetitors || []);
-            setPrompts(result.suggestedPrompts || []);
-            
-            // Initialize company description from snapshot
-            if (result.snapshot.companyDescription) {
-                setCompanyDescription(result.snapshot.companyDescription);
-            } else {
-                // Fallback to basic data
-                setCompanyDescription({
-                    ...defaultCompanyDescription,
-                    overview: result.snapshot.description || '',
-                    productsAndServices: result.snapshot.descriptionSpecs || [],
-                    practicalDetails: {
-                        website: result.snapshot.website || '',
-                        contact: '',
-                        positioningNote: result.snapshot.industry || ''
-                    }
-                });
             }
         }
 
@@ -104,34 +121,82 @@ export function ReviewStep() {
         setIsSubmitting(true);
 
         try {
+            // Get token ONCE at the start
+            const token = await getToken();
+            
+            if (!token) {
+                console.error('No token available');
+                setIsSubmitting(false);
+                return;
+            }
+
             // Update snapshot with company description
             const updatedSnapshot: EntitySnapshot = {
                 ...snapshot,
                 companyDescription
             };
 
-            // Store the final reviewed data
-            sessionStorage.setItem('onboarding_final', JSON.stringify({
-                snapshot: updatedSnapshot,
-                prompts,
-                competitors
-            }));
+            // Store the final reviewed data in backend
+            await fetch('/api/onboarding/scan-result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    scanData: {
+                        snapshot: updatedSnapshot,
+                        prompts,
+                        competitors,
+                        type: 'final_review'
+                    }
+                })
+            });
 
-            // Update onboarding progress
-            const token = await getToken();
-            await fetch('/api/onboarding/status', {
+            // Store business data in Supabase
+            const businessResponse = await fetch('/api/businesses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    businessName: updatedSnapshot.businessName,
+                    industry: updatedSnapshot.industry,
+                    region: updatedSnapshot.region,
+                    website: updatedSnapshot.website,
+                    description: updatedSnapshot.description,
+                    logoUrl: updatedSnapshot.logoUrl,
+                    plan: 'free' // Default to free plan for now
+                })
+            });
+
+            if (!businessResponse.ok) {
+                const errorData = await businessResponse.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to save business data');
+            }
+
+            // Mark onboarding as complete
+            const statusResponse = await fetch('/api/onboarding/status', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    currentStep: 'plan',
-                    completedSteps: ['company', 'scanning', 'review']
+                    currentStep: 'completed',
+                    completedSteps: ['company', 'scanning', 'review'],
+                    isComplete: true
                 })
             });
 
-            navigate('/onboarding/plan');
+            if (!statusResponse.ok) {
+                const errorData = await statusResponse.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to update onboarding status');
+            }
+
+            // Navigate to dashboard
+            navigate('/dashboard');
         } catch (err) {
             console.error('Error:', err);
             setIsSubmitting(false);
@@ -180,6 +245,54 @@ export function ReviewStep() {
             showTestimonials={false}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {/* Logo and Company Name */}
+                {snapshot.logoUrl && (
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        paddingBottom: '1rem',
+                        borderBottom: '1px solid #30363d'
+                    }}>
+                        <div style={{
+                            width: '100px',
+                            height: '100px',
+                            borderRadius: '16px',
+                            background: 'rgba(22, 27, 34, 0.8)',
+                            border: '2px solid rgba(88, 166, 255, 0.3)',
+                            boxShadow: '0 0 20px rgba(88, 166, 255, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden'
+                        }}>
+                            <img
+                                src={snapshot.logoUrl}
+                                alt={`${snapshot.businessName} logo`}
+                                style={{ 
+                                    maxWidth: '90%', 
+                                    maxHeight: '90%', 
+                                    objectFit: 'contain' 
+                                }}
+                                onError={(e) => {
+                                    // Hide logo if it fails to load
+                                    (e.target as HTMLElement).style.display = 'none';
+                                }}
+                            />
+                        </div>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: '1.3rem',
+                            fontWeight: 600,
+                            color: '#c9d1d9',
+                            textAlign: 'center'
+                        }}>
+                            {snapshot.businessName}
+                        </h3>
+                    </div>
+                )}
+
                 {/* Tabs */}
                 <div style={{
                     display: 'flex',

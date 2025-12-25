@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { SignedIn, SignedOut, RedirectToSignIn, useAuth } from "@clerk/clerk-react";
-import { Onboarding } from './components/Onboarding';
-import { Results } from './components/Results';
-import { LoadingScreen } from './components/LoadingScreen';
 import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
@@ -18,21 +15,13 @@ import { AITrafficPage } from './pages/dashboard/AITraffic';
 import { CompanyStep } from './pages/onboarding/CompanyStep';
 import { ScanningStep } from './pages/onboarding/ScanningStep';
 import { ReviewStep } from './pages/onboarding/ReviewStep';
-import { PlanStep } from './pages/onboarding/PlanStep';
 import { OnboardingGuard } from './components/OnboardingGuard';
-import type { EntitySnapshot, AnalysisResult, GeneratorOutput } from './types';
-
-type Step = 'onboarding' | 'analyzing' | 'results';
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { getToken, isSignedIn } = useAuth();
-  const [step, setStep] = useState<Step>('onboarding');
-  const [snapshot, setSnapshot] = useState<EntitySnapshot | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [assets, setAssets] = useState<GeneratorOutput | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const hasCheckedOnboarding = useRef(false);
 
   // Redirect signed-in users from homepage to onboarding or dashboard
   useEffect(() => {
@@ -40,6 +29,8 @@ function App() {
       // Only redirect on homepage, not on other routes
       if (location.pathname !== '/') return;
       if (!isSignedIn) return;
+      if (hasCheckedOnboarding.current) return;
+      hasCheckedOnboarding.current = true;
       
       try {
         const token = await getToken();
@@ -65,122 +56,45 @@ function App() {
     }
     
     handleSignedInUser();
-  }, [isSignedIn, getToken, navigate, location.pathname]);
+  }, [isSignedIn, getToken, navigate]);
 
-  // Phase 1: Analyze Visibility (with auth support)
-  const handleAnalyze = async (data: EntitySnapshot, prompts: string[], competitors: string[] = []) => {
-    setSnapshot(data);
-    setStep('analyzing');
-
-    try {
-      // Get token if user is signed in
-      const token = isSignedIn ? await getToken() : null;
-      
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ snapshot: data, prompts, competitors })
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          navigate('/sign-in');
-          return;
-        }
-        throw new Error("Analysis failed");
-      }
-
-      const result: AnalysisResult = await res.json();
-      setAnalysis(result);
-      setStep('results');
-    } catch (err) {
-      console.error(err);
-      alert("Analysis failed. Public scans are limited. Sign in for full access.");
-      setStep('onboarding');
-    }
-  };
-
-  // Phase 2: Generate Assets
-  const handleGenerate = async () => {
-    if (!snapshot) return;
-    setIsGenerating(true);
-    try {
-      // Get token if user is signed in
-      const token = isSignedIn ? await getToken() : null;
-      
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ snapshot })
-      });
-
-      const result: GeneratorOutput = await res.json();
-      setAssets(result);
-    } catch (err) {
-      alert("Generation failed");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   return (
     <Routes>
       <Route path="/" element={
-        <div className="container">
-          <header style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '2rem',
-            padding: '1rem 0'
-          }}>
-            <div>
-              <h1 style={{ fontSize: '2rem', marginBottom: '0.2rem', cursor: 'pointer' }} onClick={() => navigate('/')}>
-                Geoffrey.ai
-              </h1>
-              <p style={{ color: '#8b949e', fontSize: '0.9rem' }}>GEO & AI Visibility Optimization</p>
+        <>
+          <SignedOut>
+            <Navigate to="/sign-in" replace />
+          </SignedOut>
+          <SignedIn>
+            {/* Redirect logic finns redan i useEffect */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              minHeight: '100vh',
+              background: '#0d1117'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '50px',
+                  height: '50px',
+                  border: '3px solid rgba(48, 54, 61, 0.5)',
+                  borderTopColor: '#58a6ff',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 1rem'
+                }} />
+                <style>{`
+                  @keyframes spin {
+                    to { transform: rotate(360deg); }
+                  }
+                `}</style>
+                <p style={{ color: '#8b949e' }}>Loading...</p>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <SignedIn>
-                {/* Signed-in users are redirected, so this won't show */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <p style={{ color: '#8b949e', fontSize: '0.9rem', margin: 0 }}>Redirecting...</p>
-                </div>
-              </SignedIn>
-              <SignedOut>
-                <button className="btn-secondary" onClick={() => navigate('/sign-in')} style={{ padding: '0.5rem 1rem' }}>
-                  Sign In
-                </button>
-              </SignedOut>
-            </div>
-          </header>
-
-          {step === 'analyzing' && <LoadingScreen />}
-          {step === 'onboarding' && <Onboarding onComplete={handleAnalyze} isLoading={false} />}
-          {step === 'results' && analysis && (
-            <Results
-              analysis={analysis}
-              onGenerate={handleGenerate}
-              isGenerating={isGenerating}
-              assets={assets}
-              reset={() => {
-                setStep('onboarding');
-                setAnalysis(null);
-                setAssets(null);
-              }}
-            />
-          )}
-        </div>
+          </SignedIn>
+        </>
       } />
 
       <Route path="/sign-in/*" element={<SignInPage />} />
@@ -219,19 +133,6 @@ function App() {
           <>
             <SignedIn>
               <ReviewStep />
-            </SignedIn>
-            <SignedOut>
-              <RedirectToSignIn />
-            </SignedOut>
-          </>
-        }
-      />
-      <Route
-        path="/onboarding/plan"
-        element={
-          <>
-            <SignedIn>
-              <PlanStep />
             </SignedIn>
             <SignedOut>
               <RedirectToSignIn />

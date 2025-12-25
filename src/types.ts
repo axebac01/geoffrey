@@ -23,9 +23,12 @@ export interface KeywordPromptPair {
 // Competitor with detection metadata
 export interface CompetitorInfo {
   name: string;
-  type: 'direct' | 'indirect';
+  type: 'direct' | 'indirect' | 'market_leader' | 'emerging';
   reason: string;
   confidence?: number;
+  geographicMatch?: 'local' | 'regional' | 'national' | 'international';
+  serviceMatch?: 'high' | 'medium' | 'low';
+  sources?: string[]; // e.g., ['website', 'market_intelligence', 'query_analysis']
 }
 
 export interface EntitySnapshot {

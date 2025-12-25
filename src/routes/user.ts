@@ -119,7 +119,7 @@ router.get('/profile', ClerkExpressRequireAuth() as any, async (req: Request, re
  */
 router.post('/', ClerkExpressRequireAuth() as any, async (req: Request, res: Response) => {
     const userId = (req as any).auth?.userId;
-    const { businessName, industry, region, website, description, plan } = req.body;
+    const { businessName, industry, region, website, description, logoUrl, plan } = req.body;
 
     try {
         const { data: business, error } = await supabase
@@ -131,6 +131,7 @@ router.post('/', ClerkExpressRequireAuth() as any, async (req: Request, res: Res
                 region,
                 website,
                 description,
+                logo_url: logoUrl,
                 plan: plan || 'free',
                 updated_at: new Date().toISOString()
             }, {

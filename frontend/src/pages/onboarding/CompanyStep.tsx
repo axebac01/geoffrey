@@ -23,14 +23,22 @@ export function CompanyStep() {
         setIsSubmitting(true);
 
         try {
-            // Store the input data in sessionStorage for the scanning step
-            sessionStorage.setItem('onboarding_company', JSON.stringify({
-                companyName: companyName.trim(),
-                website: website.trim()
-            }));
+            const token = await getToken();
+            
+            // Save company data to backend
+            await fetch('/api/onboarding/company-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    companyName: companyName.trim(),
+                    website: website.trim()
+                })
+            });
 
             // Update onboarding progress
-            const token = await getToken();
             await fetch('/api/onboarding/status', {
                 method: 'PATCH',
                 headers: {
