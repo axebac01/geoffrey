@@ -40,6 +40,14 @@ export function CompanyStep() {
         <AuthLayout
             title="Tell us about your business"
             subtitle="We'll analyze your website and optimize your AI visibility"
+            leftHeadline="Let's get started with your business"
+            leftDescription="We'll scan your website to understand your business, identify competitors, and generate AI-optimized content recommendations."
+            leftStats={[
+                { value: '30s', label: 'average scan time' },
+                { value: '20+', label: 'AI prompts generated' },
+                { value: '5-10', label: 'competitors detected' }
+            ]}
+            showTestimonials={false}
         >
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {error && (

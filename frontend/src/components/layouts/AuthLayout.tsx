@@ -1,16 +1,29 @@
 import React from 'react';
 
+interface Stat {
+    value: string;
+    label: string;
+}
+
 interface AuthLayoutProps {
     children: React.ReactNode;
     title?: string;
     subtitle?: string;
+    // New props for customizing left side
+    leftHeadline?: string;
+    leftDescription?: string;
+    leftStats?: Stat[];
+    showTestimonials?: boolean;
 }
 
-const stats = [
+const defaultStats = [
     { value: '40%', label: 'of Google searches now trigger AI Overviews' },
     { value: '73%', label: 'of users trust AI-recommended brands more' },
     { value: '2.3x', label: 'higher conversion from AI-referred traffic' },
 ];
+
+const defaultHeadline = "Get discovered by AI assistants like ChatGPT and Gemini";
+const defaultDescription = "Measure your brand's visibility in AI search results and get actionable recommendations to improve your GEO (Generative Engine Optimization).";
 
 const testimonials = [
     {
@@ -33,15 +46,25 @@ const testimonials = [
     }
 ];
 
-export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
+export function AuthLayout({ 
+    children, 
+    title, 
+    subtitle,
+    leftHeadline = defaultHeadline,
+    leftDescription = defaultDescription,
+    leftStats = defaultStats,
+    showTestimonials = true
+}: AuthLayoutProps) {
     const [currentTestimonial, setCurrentTestimonial] = React.useState(0);
 
     React.useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, []);
+        if (showTestimonials) {
+            const interval = setInterval(() => {
+                setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+            }, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [showTestimonials]);
 
     return (
         <div style={{
@@ -108,20 +131,20 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent'
                     }}>
-                        Get discovered by AI assistants like ChatGPT and Gemini
+                        {leftHeadline}
                     </h1>
                     <p style={{ color: '#8b949e', fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '3rem' }}>
-                        Measure your brand's visibility in AI search results and get actionable recommendations to improve your GEO (Generative Engine Optimization).
+                        {leftDescription}
                     </p>
 
                     {/* Stats */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gridTemplateColumns: leftStats.length === 2 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
                         gap: '1.5rem',
                         marginBottom: '3rem'
                     }}>
-                        {stats.map((stat, i) => (
+                        {leftStats.map((stat, i) => (
                             <div key={i} style={{
                                 background: 'rgba(13, 17, 23, 0.6)',
                                 border: '1px solid rgba(48, 54, 61, 0.5)',
@@ -146,13 +169,14 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                     </div>
 
                     {/* Testimonial */}
-                    <div style={{
-                        background: 'rgba(13, 17, 23, 0.6)',
-                        border: '1px solid rgba(48, 54, 61, 0.5)',
-                        borderRadius: '16px',
-                        padding: '1.5rem',
-                        position: 'relative'
-                    }}>
+                    {showTestimonials && (
+                        <div style={{
+                            background: 'rgba(13, 17, 23, 0.6)',
+                            border: '1px solid rgba(48, 54, 61, 0.5)',
+                            borderRadius: '16px',
+                            padding: '1.5rem',
+                            position: 'relative'
+                        }}>
                         <div style={{
                             position: 'absolute',
                             top: '-12px',
@@ -221,6 +245,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                             ))}
                         </div>
                     </div>
+                    )}
                 </div>
             </div>
 

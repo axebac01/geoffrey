@@ -132,6 +132,14 @@ export function ReviewStep() {
         <AuthLayout
             title="Review your profile"
             subtitle="Verify the information we found about your business"
+            leftHeadline="Almost there! Review your profile"
+            leftDescription="We've analyzed your business and generated prompts. Review and customize the information to ensure accurate AI visibility testing."
+            leftStats={[
+                { value: '✓', label: 'Company info extracted' },
+                { value: '✓', label: 'Competitors identified' },
+                { value: '✓', label: 'Prompts generated' }
+            ]}
+            showTestimonials={false}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Tabs */}

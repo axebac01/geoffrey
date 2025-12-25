@@ -135,6 +135,14 @@ export function PlanStep() {
         <AuthLayout
             title="Choose your plan"
             subtitle="Start with a 7-day free trial. Cancel anytime."
+            leftHeadline="You're all set! Choose your plan"
+            leftDescription="Start your free trial and begin optimizing your AI visibility. Track your progress, test prompts, and generate GEO-optimized content."
+            leftStats={[
+                { value: '7 days', label: 'free trial' },
+                { value: 'Cancel', label: 'anytime' },
+                { value: 'No card', label: 'required' }
+            ]}
+            showTestimonials={true}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {plans.map((plan) => (

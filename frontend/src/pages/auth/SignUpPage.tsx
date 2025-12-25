@@ -10,6 +10,7 @@ export default function SignUpPage() {
             <SignUp 
                 routing="path" 
                 path="/sign-up"
+                afterSignUpUrl="/onboarding/company"
                 appearance={{
                     elements: {
                         rootBox: {

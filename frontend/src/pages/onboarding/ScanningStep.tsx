@@ -76,6 +76,14 @@ export function ScanningStep() {
         <AuthLayout
             title="Scanning your website"
             subtitle="We're analyzing your business to optimize AI visibility"
+            leftHeadline="Deep analysis in progress"
+            leftDescription="Our AI is extracting business information, identifying market positioning, detecting competitors, and generating strategic prompts for AI visibility testing."
+            leftStats={[
+                { value: '6', label: 'analysis passes' },
+                { value: '100%', label: 'AI-powered' },
+                { value: 'Real-time', label: 'results' }
+            ]}
+            showTestimonials={false}
         >
             <div style={{ padding: '1rem 0' }}>
                 {error ? (
