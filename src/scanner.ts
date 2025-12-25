@@ -6,6 +6,7 @@ import { EntitySnapshot } from "./types";
 interface ScanResult {
     snapshot: EntitySnapshot;
     suggestedPrompts: string[];
+    suggestedCompetitors: string[];
 }
 
 /**
@@ -256,9 +257,55 @@ CRITICAL Guidelines:
 
     const data = JSON.parse(generatorResponse.choices[0]?.message?.content || "{}");
 
-    // Extract business name from domain (more reliable than LLM)
+    // Extract business name from domain (more reliable than LLM) - do this before competitor detection
     const domainName = new URL(targetUrl).hostname.replace('www.', '').split('.')[0];
     const beautifiedName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
+
+    // === PASS 5: Competitor Detection ===
+    console.log(`[Scanner] Pass 5/5: Competitor Detection...`);
+    const competitorPrompt = `
+You are a Market Intelligence Agent.
+Task: Identify direct and indirect competitors for this business.
+
+Business Information:
+- Name: ${beautifiedName || data.businessName || "Unknown"}
+- Industry/Niche: ${positioningData.marketNiche || data.industry || "Unknown"}
+- Region: ${data.region || "Unknown"}
+- Services: ${data.descriptionSpecs?.join(", ") || "Unknown"}
+- Strategic Focus: ${focusAreas.join(", ")}
+
+Return ONLY JSON:
+{
+  "competitors": [
+    {
+      "name": "Competitor Company Name",
+      "type": "direct" | "indirect",
+      "reason": "Brief explanation why this is a competitor"
+    }
+  ]
+}
+
+Guidelines:
+- Identify 5-10 competitors (mix of direct and indirect)
+- Direct competitors: Same industry, same region, similar services
+- Indirect competitors: Different approach but serve same customer needs
+- Include well-known brands that customers might compare against
+- Focus on competitors that would appear in AI search results
+- Be specific with company names (not generic categories)
+`;
+
+    const competitorResponse = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+            { role: "system", content: competitorPrompt },
+            { role: "user", content: `Identify competitors.` }
+        ],
+        temperature: 0.4,
+        response_format: { type: "json_object" }
+    });
+
+    const competitorData = JSON.parse(competitorResponse.choices[0]?.message?.content || "{}");
+    const suggestedCompetitors = (competitorData.competitors || []).map((c: any) => c.name).filter(Boolean);
 
     return {
         snapshot: {
@@ -271,6 +318,7 @@ CRITICAL Guidelines:
             logoUrl: logoUrl || undefined,
             description: extractedData.companyDescription || ""
         },
-        suggestedPrompts: data.suggestedPrompts || []
+        suggestedPrompts: data.suggestedPrompts || [],
+        suggestedCompetitors: suggestedCompetitors
     };
 }

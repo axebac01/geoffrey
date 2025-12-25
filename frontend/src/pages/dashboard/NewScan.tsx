@@ -15,7 +15,7 @@ export function NewScanPage() {
     const [assets, setAssets] = useState<GeneratorOutput | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
-    const handleAnalyze = async (data: EntitySnapshot, prompts: string[]) => {
+    const handleAnalyze = async (data: EntitySnapshot, prompts: string[], competitors: string[] = []) => {
         setSnapshot(data);
         setStep('analyzing');
 
@@ -27,7 +27,7 @@ export function NewScanPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ snapshot: data, prompts })
+                body: JSON.stringify({ snapshot: data, prompts, competitors })
             });
 
             if (!res.ok) throw new Error("Analysis failed");

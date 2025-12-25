@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { AITrafficCard } from '../../components/AITrafficCard';
 
 export function DashboardOverview() {
     const { user } = useUser();
@@ -12,9 +13,11 @@ export function DashboardOverview() {
     useEffect(() => {
         async function fetchScans() {
             if (!user) return;
+            // Always filter by user_id for security
             const { data } = await supabase
                 .from('scans')
                 .select('*, businesses(*)')
+                .eq('user_id', user.id) // Security: Only fetch user's own scans
                 .order('created_at', { ascending: false });
 
             if (data) setScans(data);
@@ -44,6 +47,11 @@ export function DashboardOverview() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '1.8rem' }}>Welcome back, {user?.firstName}!</h1>
                 <button className="btn-secondary" onClick={() => navigate('/dashboard/scan')}>+ New Scan</button>
+            </div>
+
+            {/* AI Traffic Card */}
+            <div style={{ marginBottom: '2rem' }}>
+                <AITrafficCard compact />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>

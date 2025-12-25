@@ -14,6 +14,8 @@ export interface PromptResult {
   promptText: string;
   responderAnswer: string;
   judgeResult: JudgeOutput;
+  // Aggregated results from multiple runs
+  aggregatedResult?: AggregatedJudgeResult;
 }
 
 export interface JudgeOutput {
@@ -25,11 +27,52 @@ export interface JudgeOutput {
   sentiment?: "positive" | "neutral" | "negative";
 }
 
+export interface AggregatedJudgeResult {
+  // Average across multiple runs
+  mentionRate: number; // 0-1, percentage of runs where brand was mentioned
+  averageRankPosition: number | null; // Average rank when mentioned
+  industryMatchRate: number; // 0-1
+  locationMatchRate: number; // 0-1
+  sentimentDistribution: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  confidenceInterval: {
+    lower: number; // Lower bound of mention rate
+    upper: number; // Upper bound of mention rate
+  };
+  runCount: number; // Number of successful runs
+  totalRuns: number; // Total runs attempted
+}
+
+export interface CompetitorMention {
+  competitorName: string;
+  isMentioned: boolean;
+  mentionCount: number; // Number of prompts where this competitor was mentioned
+  averageRankPosition: number | null; // Average rank when mentioned
+  mentionRate: number; // 0-1, percentage of prompts where mentioned
+}
+
+export interface ShareOfVoice {
+  brandMentionRate: number; // 0-1, percentage of prompts where brand was mentioned
+  competitorMentions: CompetitorMention[];
+  totalMentions: number; // Total mentions across all prompts
+  brandShare: number; // Percentage of total mentions that are the brand
+  topCompetitors: CompetitorMention[]; // Top 5 competitors by mention rate
+}
+
 export interface AnalysisResult {
   snapshot: EntitySnapshot;
   results: PromptResult[];
   overallScore: number;
   coverageFraction: string; // e.g., "3/5"
+  confidenceInterval?: {
+    lower: number;
+    upper: number;
+  };
+  shareOfVoice?: ShareOfVoice;
+  competitors?: string[]; // List of competitors analyzed
 }
 
 export interface FAQItem {

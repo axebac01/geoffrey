@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { AnalysisResult, GeneratorOutput } from '../types';
+import { SovExplanation } from './SovExplanation';
 
 interface ResultsProps {
     analysis: AnalysisResult;
@@ -19,6 +20,7 @@ export function Results({ analysis, onGenerate, isGenerating, assets, reset }: R
 
     const totalTests = analysis.results.length;
     const scorePercentage = analysis.overallScore;
+    const shareOfVoice = analysis.shareOfVoice;
 
     return (
         <div style={{ maxWidth: '900px', margin: '3rem auto' }}>
@@ -182,6 +184,232 @@ export function Results({ analysis, onGenerate, isGenerating, assets, reset }: R
                     </div>
                 </div>
             </div>
+
+            {/* Share of Voice Section */}
+            {shareOfVoice && (
+                <div style={{
+                    background: 'rgba(247, 120, 186, 0.05)',
+                    border: '1px solid rgba(247, 120, 186, 0.2)',
+                    borderRadius: '16px',
+                    padding: '2rem',
+                    marginBottom: '3rem'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h3 style={{
+                            fontSize: '1.5rem',
+                            color: '#c9d1d9',
+                            margin: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            📊 Share of Voice (SoV)
+                        </h3>
+                    </div>
+
+                    {/* SoV Explanation */}
+                    <SovExplanation shareOfVoice={shareOfVoice} />
+
+                    {/* SoV Main Metric */}
+                    <div style={{
+                        background: 'linear-gradient(135deg, rgba(247, 120, 186, 0.1) 0%, rgba(88, 166, 255, 0.1) 100%)',
+                        border: '2px solid rgba(247, 120, 186, 0.3)',
+                        borderRadius: '16px',
+                        padding: '2.5rem',
+                        textAlign: 'center',
+                        marginBottom: '2rem',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        {/* Background glow */}
+                        <div style={{
+                            position: 'absolute',
+                            top: '-50%',
+                            left: '-50%',
+                            width: '200%',
+                            height: '200%',
+                            background: 'radial-gradient(circle, rgba(247, 120, 186, 0.15) 0%, transparent 70%)',
+                            pointerEvents: 'none'
+                        }}></div>
+
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            <div style={{
+                                fontSize: '0.9rem',
+                                color: '#8b949e',
+                                marginBottom: '1rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '2px'
+                            }}>
+                                Din Share of Voice
+                            </div>
+                            <div style={{
+                                fontSize: '5rem',
+                                fontWeight: 800,
+                                background: shareOfVoice.brandShare >= 50 
+                                    ? 'linear-gradient(90deg, #3fb950, #238636)'
+                                    : shareOfVoice.brandShare >= 25
+                                    ? 'linear-gradient(90deg, #d29922, #f79000)'
+                                    : 'linear-gradient(90deg, #f778ba, #58a6ff)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                marginBottom: '0.5rem',
+                                lineHeight: 1
+                            }}>
+                                {shareOfVoice.brandShare.toFixed(1)}%
+                            </div>
+                            <div style={{
+                                fontSize: '1rem',
+                                color: '#8b949e',
+                                marginBottom: '1.5rem'
+                            }}>
+                                av totala mentions i AI-svar
+                            </div>
+
+                            {/* SoV Progress Bar */}
+                            <div style={{
+                                width: '100%',
+                                height: '12px',
+                                background: 'rgba(48, 54, 61, 0.5)',
+                                borderRadius: '6px',
+                                overflow: 'hidden',
+                                marginBottom: '1rem'
+                            }}>
+                                <div style={{
+                                    width: `${Math.min(shareOfVoice.brandShare, 100)}%`,
+                                    height: '100%',
+                                    background: shareOfVoice.brandShare >= 50
+                                        ? 'linear-gradient(90deg, #3fb950, #238636)'
+                                        : shareOfVoice.brandShare >= 25
+                                        ? 'linear-gradient(90deg, #d29922, #f79000)'
+                                        : 'linear-gradient(90deg, #f778ba, #58a6ff)',
+                                    borderRadius: '6px',
+                                    transition: 'width 0.5s ease-out',
+                                    boxShadow: `0 0 20px ${shareOfVoice.brandShare >= 50 ? 'rgba(35, 134, 54, 0.5)' : 'rgba(247, 120, 186, 0.5)'}`
+                                }}></div>
+                            </div>
+
+                            {/* SoV Status */}
+                            <div style={{
+                                display: 'inline-block',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '20px',
+                                background: shareOfVoice.brandShare >= 50
+                                    ? 'rgba(35, 134, 54, 0.2)'
+                                    : shareOfVoice.brandShare >= 25
+                                    ? 'rgba(210, 153, 34, 0.2)'
+                                    : 'rgba(218, 54, 51, 0.2)',
+                                border: `1px solid ${shareOfVoice.brandShare >= 50
+                                    ? 'rgba(35, 134, 54, 0.4)'
+                                    : shareOfVoice.brandShare >= 25
+                                    ? 'rgba(210, 153, 34, 0.4)'
+                                    : 'rgba(218, 54, 51, 0.4)'}`,
+                                color: shareOfVoice.brandShare >= 50
+                                    ? '#3fb950'
+                                    : shareOfVoice.brandShare >= 25
+                                    ? '#d29922'
+                                    : '#f85149',
+                                fontSize: '0.9rem',
+                                fontWeight: 600
+                            }}>
+                                {shareOfVoice.brandShare >= 50
+                                    ? '✅ Utmärkt - Du dominerar marknaden'
+                                    : shareOfVoice.brandShare >= 25
+                                    ? '⚠️ Bra - Väl representerad'
+                                    : '📈 Förbättringspotential'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Top Competitors */}
+                    {shareOfVoice.topCompetitors.length > 0 && (
+                        <div>
+                            <h4 style={{
+                                fontSize: '1.1rem',
+                                color: '#c9d1d9',
+                                marginBottom: '1rem'
+                            }}>
+                                Top Competitors
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {shareOfVoice.topCompetitors.map((competitor, index) => {
+                                    const mentionPercentage = competitor.mentionRate * 100;
+                                    const barWidth = (competitor.mentionRate / shareOfVoice.brandMentionRate) * 100;
+                                    
+                                    return (
+                                        <div key={index} style={{
+                                            background: 'rgba(13, 17, 23, 0.6)',
+                                            border: '1px solid rgba(247, 120, 186, 0.2)',
+                                            borderRadius: '8px',
+                                            padding: '1rem',
+                                        }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                marginBottom: '0.5rem'
+                                            }}>
+                                                <span style={{
+                                                    color: '#c9d1d9',
+                                                    fontWeight: 500,
+                                                    fontSize: '1rem'
+                                                }}>
+                                                    {competitor.competitorName}
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                    {competitor.averageRankPosition && (
+                                                        <span style={{
+                                                            color: '#8b949e',
+                                                            fontSize: '0.85rem'
+                                                        }}>
+                                                            Avg Rank: #{competitor.averageRankPosition.toFixed(1)}
+                                                        </span>
+                                                    )}
+                                                    <span style={{
+                                                        color: '#f778ba',
+                                                        fontWeight: 600,
+                                                        fontSize: '1rem'
+                                                    }}>
+                                                        {mentionPercentage.toFixed(0)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div style={{
+                                                width: '100%',
+                                                height: '8px',
+                                                background: 'rgba(48, 54, 61, 0.5)',
+                                                borderRadius: '4px',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <div style={{
+                                                    width: `${Math.min(barWidth, 100)}%`,
+                                                    height: '100%',
+                                                    background: 'linear-gradient(90deg, rgba(247, 120, 186, 0.6), rgba(247, 120, 186, 0.3))',
+                                                    borderRadius: '4px',
+                                                    transition: 'width 0.5s ease-out'
+                                                }}></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* All Competitors Summary */}
+                    {shareOfVoice.competitorMentions.length > shareOfVoice.topCompetitors.length && (
+                        <div style={{
+                            marginTop: '1.5rem',
+                            paddingTop: '1.5rem',
+                            borderTop: '1px solid rgba(247, 120, 186, 0.2)',
+                            fontSize: '0.9rem',
+                            color: '#8b949e',
+                            textAlign: 'center'
+                        }}>
+                            {shareOfVoice.competitorMentions.length - shareOfVoice.topCompetitors.length} more competitor{shareOfVoice.competitorMentions.length - shareOfVoice.topCompetitors.length !== 1 ? 's' : ''} analyzed
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Primary CTA */}
             <div style={{

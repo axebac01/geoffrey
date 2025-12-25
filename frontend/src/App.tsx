@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut, RedirectToSignIn, UserButton } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, RedirectToSignIn, UserButton, useAuth } from "@clerk/clerk-react";
 import { Onboarding } from './components/Onboarding';
 import { Results } from './components/Results';
 import { LoadingScreen } from './components/LoadingScreen';
@@ -11,28 +11,39 @@ import { DashboardOverview } from './pages/dashboard/Overview';
 import { NewScanPage } from './pages/dashboard/NewScan';
 import { ImprovementsPage } from './pages/dashboard/Improvements';
 import { ProfilePage } from './pages/dashboard/Profile';
+import { SettingsPage } from './pages/dashboard/Settings';
+import { AITrafficPage } from './pages/dashboard/AITraffic';
 import type { EntitySnapshot, AnalysisResult, GeneratorOutput } from './types';
 
 type Step = 'onboarding' | 'analyzing' | 'results';
 
 function App() {
   const navigate = useNavigate();
+  const { getToken, isSignedIn } = useAuth();
   const [step, setStep] = useState<Step>('onboarding');
   const [snapshot, setSnapshot] = useState<EntitySnapshot | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [assets, setAssets] = useState<GeneratorOutput | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Phase 1: Analyze Visibility (Public version)
-  const handleAnalyze = async (data: EntitySnapshot, prompts: string[]) => {
+  // Phase 1: Analyze Visibility (with auth support)
+  const handleAnalyze = async (data: EntitySnapshot, prompts: string[], competitors: string[] = []) => {
     setSnapshot(data);
     setStep('analyzing');
 
     try {
+      // Get token if user is signed in
+      const token = isSignedIn ? await getToken() : null;
+      
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ snapshot: data, prompts })
+        headers,
+        body: JSON.stringify({ snapshot: data, prompts, competitors })
       });
 
       if (!res.ok) {
@@ -58,9 +69,17 @@ function App() {
     if (!snapshot) return;
     setIsGenerating(true);
     try {
+      // Get token if user is signed in
+      const token = isSignedIn ? await getToken() : null;
+      
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ snapshot })
       });
 
@@ -142,8 +161,11 @@ function App() {
       >
         <Route index element={<DashboardOverview />} />
         <Route path="scan" element={<NewScanPage />} />
+        <Route path="ai-traffic" element={<AITrafficPage />} />
         <Route path="improve" element={<ImprovementsPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings/integrations" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

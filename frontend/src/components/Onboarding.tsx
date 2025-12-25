@@ -3,14 +3,15 @@ import type { EntitySnapshot } from '../types';
 import { ScanningLoadingScreen } from './ScanningLoadingScreen';
 import { ProfileReview } from './ProfileReview';
 import { PromptsReview } from './PromptsReview';
+import { CompetitorsReview } from './CompetitorsReview';
 
 interface OnboardingProps {
-    onComplete: (snapshot: EntitySnapshot, prompts: string[]) => void;
+    onComplete: (snapshot: EntitySnapshot, prompts: string[], competitors: string[]) => void;
     isLoading: boolean;
 }
 
 export function Onboarding({ onComplete, isLoading }: OnboardingProps) {
-    const [view, setView] = useState<'landing' | 'scanning' | 'profile' | 'prompts'>('landing');
+    const [view, setView] = useState<'landing' | 'scanning' | 'profile' | 'prompts' | 'competitors'>('landing');
 
     const [snapshot, setSnapshot] = useState<EntitySnapshot>({
         businessName: '',
@@ -21,6 +22,7 @@ export function Onboarding({ onComplete, isLoading }: OnboardingProps) {
     });
 
     const [prompts, setPrompts] = useState<string[]>([]);
+    const [competitors, setCompetitors] = useState<string[]>([]);
     const [scanUrl, setScanUrl] = useState('');
 
     const handleScan = async (e?: React.FormEvent) => {
@@ -45,6 +47,7 @@ export function Onboarding({ onComplete, isLoading }: OnboardingProps) {
                 website: scanUrl
             });
             setPrompts(data.suggestedPrompts || []);
+            setCompetitors(data.suggestedCompetitors || []);
 
             // Move to profile review
             setView('profile');
@@ -56,7 +59,7 @@ export function Onboarding({ onComplete, isLoading }: OnboardingProps) {
     };
 
     const handleAnalyze = () => {
-        onComplete(snapshot, prompts);
+        onComplete(snapshot, prompts, competitors);
     };
 
     // --- VIEW 1: LANDING ---
@@ -120,8 +123,20 @@ export function Onboarding({ onComplete, isLoading }: OnboardingProps) {
             <PromptsReview
                 prompts={prompts}
                 onUpdate={setPrompts}
-                onContinue={handleAnalyze}
+                onContinue={() => setView('competitors')}
                 onBack={() => setView('profile')}
+            />
+        );
+    }
+
+    // --- VIEW 5: COMPETITORS REVIEW ---
+    if (view === 'competitors') {
+        return (
+            <CompetitorsReview
+                competitors={competitors}
+                onUpdate={setCompetitors}
+                onContinue={handleAnalyze}
+                onBack={() => setView('prompts')}
             />
         );
     }

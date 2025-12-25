@@ -25,11 +25,33 @@ export interface JudgeOutput {
   sentiment?: "positive" | "neutral" | "negative";
 }
 
+export interface CompetitorMention {
+  competitorName: string;
+  isMentioned: boolean;
+  mentionCount: number;
+  averageRankPosition: number | null;
+  mentionRate: number;
+}
+
+export interface ShareOfVoice {
+  brandMentionRate: number;
+  competitorMentions: CompetitorMention[];
+  totalMentions: number;
+  brandShare: number;
+  topCompetitors: CompetitorMention[];
+}
+
 export interface AnalysisResult {
   snapshot: EntitySnapshot;
   results: PromptResult[];
   overallScore: number;
   coverageFraction: string; // e.g., "3/5"
+  confidenceInterval?: {
+    lower: number;
+    upper: number;
+  };
+  shareOfVoice?: ShareOfVoice;
+  competitors?: string[];
 }
 
 export interface FAQItem {

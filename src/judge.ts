@@ -1,5 +1,6 @@
 import { createOpenAIClient } from "./config";
 import { EntitySnapshot, JudgeOutput } from "./types";
+import { logger } from "./logger";
 
 /**
  * Pass 2: Judge
@@ -45,26 +46,121 @@ ${answerText}
 """
 `;
 
-    try {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt },
-            ],
-            temperature: 0.0, // Strict evaluation
-            response_format: { type: "json_object" },
-        });
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) throw new Error("No content from Judge");
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt },
+                ],
+                temperature: 0.0, // Strict evaluation
+                response_format: { type: "json_object" },
+            });
 
-        const result = JSON.parse(content) as JudgeOutput;
-        return result;
-    } catch (error) {
-        console.error("Error in runJudge:", error);
-        // Return a safe fallback to avoid crashing calculations, or rethrow?
-        // For now, rethrow so we know something went wrong with the judge logic.
-        throw error;
+            const content = response.choices[0]?.message?.content;
+            if (!content) {
+                throw new Error("No content from Judge");
+            }
+
+            // Try to parse JSON, handle invalid JSON gracefully
+            let result: JudgeOutput;
+            try {
+                result = JSON.parse(content) as JudgeOutput;
+            } catch (parseError) {
+                logger.warn('Judge returned invalid JSON', {
+                    attempt,
+                    contentLength: content.length,
+                    contentPreview: content.slice(0, 100),
+                }, parseError as Error);
+                // Try to extract basic info from malformed JSON
+                if (attempt < maxRetries) {
+                    lastError = new Error(`Invalid JSON response: ${parseError}`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+                    continue;
+                }
+                // Last attempt failed, return safe fallback
+                return {
+                    isMentioned: false,
+                    mentionType: "none",
+                    rankPosition: undefined,
+                    industryMatch: false,
+                    locationMatch: false,
+                    sentiment: "neutral"
+                };
+            }
+
+            // Validate required fields
+            if (typeof result.isMentioned !== 'boolean' || 
+                typeof result.industryMatch !== 'boolean' || 
+                typeof result.locationMatch !== 'boolean') {
+                logger.warn('Judge returned invalid response structure', {
+                    attempt,
+                    hasIsMentioned: typeof result.isMentioned === 'boolean',
+                    hasIndustryMatch: typeof result.industryMatch === 'boolean',
+                    hasLocationMatch: typeof result.locationMatch === 'boolean',
+                });
+                if (attempt < maxRetries) {
+                    lastError = new Error("Invalid response structure");
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                    continue;
+                }
+                // Return safe fallback
+                return {
+                    isMentioned: false,
+                    mentionType: "none",
+                    rankPosition: undefined,
+                    industryMatch: false,
+                    locationMatch: false,
+                    sentiment: "neutral"
+                };
+            }
+
+            logger.debug('Judge completed successfully', {
+                attempt,
+                isMentioned: result.isMentioned,
+                rankPosition: result.rankPosition,
+            });
+            return result;
+        } catch (error: any) {
+            logger.warn('Judge error', {
+                attempt,
+                maxRetries,
+                retryable: error.message?.includes('rate limit') || error.message?.includes('timeout'),
+            }, error);
+            lastError = error;
+            
+            // Retry on transient errors (network, rate limits)
+            if (attempt < maxRetries && (
+                error.message?.includes('rate limit') ||
+                error.message?.includes('timeout') ||
+                error.code === 'ECONNRESET' ||
+                error.status === 429
+            )) {
+                const backoffDelay = 1000 * Math.pow(2, attempt - 1); // Exponential backoff
+                console.log(`[Judge] Retrying after ${backoffDelay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                continue;
+            }
+            
+            // Non-retryable error - return safe fallback
+            if (attempt === maxRetries) {
+                logger.error('Judge failed with non-retryable error, returning safe fallback', error);
+                return {
+                    isMentioned: false,
+                    mentionType: "none",
+                    rankPosition: undefined,
+                    industryMatch: false,
+                    locationMatch: false,
+                    sentiment: "neutral"
+                };
+            }
+        }
     }
+
+    // Should never reach here, but TypeScript needs it
+    throw lastError || new Error("Judge failed after all retries");
 }
