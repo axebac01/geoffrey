@@ -1,12 +1,14 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { createOpenAIClient } from "./config";
-import { EntitySnapshot } from "./types";
+import { EntitySnapshot, CompanyDescription, KeywordPromptPair, CompetitorInfo } from "./types";
 
 interface ScanResult {
     snapshot: EntitySnapshot;
     suggestedPrompts: string[];
     suggestedCompetitors: string[];
+    keywordPromptPairs?: KeywordPromptPair[];
+    competitorDetails?: CompetitorInfo[];
 }
 
 /**
@@ -262,7 +264,7 @@ CRITICAL Guidelines:
     const beautifiedName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
 
     // === PASS 5: Competitor Detection ===
-    console.log(`[Scanner] Pass 5/5: Competitor Detection...`);
+    console.log(`[Scanner] Pass 5/6: Competitor Detection...`);
     const competitorPrompt = `
 You are a Market Intelligence Agent.
 Task: Identify direct and indirect competitors for this business.
@@ -306,6 +308,95 @@ Guidelines:
 
     const competitorData = JSON.parse(competitorResponse.choices[0]?.message?.content || "{}");
     const suggestedCompetitors = (competitorData.competitors || []).map((c: any) => c.name).filter(Boolean);
+    const competitorDetails: CompetitorInfo[] = (competitorData.competitors || []).map((c: any) => ({
+        name: c.name,
+        type: c.type || 'direct',
+        reason: c.reason || '',
+        confidence: 0.7
+    }));
+
+    // === PASS 6: Structured Company Description ===
+    console.log(`[Scanner] Pass 6/6: Generating Structured Company Description...`);
+    const descriptionPrompt = `
+You are a Business Analyst creating a structured company profile.
+Task: Generate a comprehensive company description based on all the gathered intelligence.
+
+Business Information:
+- Name: ${beautifiedName || data.businessName || "Unknown"}
+- Industry/Niche: ${positioningData.marketNiche || data.industry || "Unknown"}
+- Region: ${data.region || "Unknown"}
+- Website: ${targetUrl}
+- Value Propositions: ${JSON.stringify(extractedData.valuePropositions || [])}
+- Target Audience: ${JSON.stringify(extractedData.targetAudience || [])}
+- Competitive Advantages: ${JSON.stringify(positioningData.competitiveAdvantages || [])}
+- Strategic Focus: ${focusAreas.join(", ")}
+- Raw Description: ${extractedData.companyDescription || ""}
+
+Return ONLY JSON with this EXACT structure:
+{
+  "overview": "A 2-3 sentence overview of the company, what they do, and their mission",
+  "productsAndServices": ["service 1", "service 2", "service 3"],
+  "targetMarket": ["target segment 1", "target segment 2"],
+  "keyDifferentiators": ["differentiator 1", "differentiator 2", "differentiator 3"],
+  "notableInfo": ["achievement 1", "certification", "any notable fact"],
+  "practicalDetails": {
+    "website": "${targetUrl}",
+    "contact": "extracted contact info or empty string",
+    "positioningNote": "brief note on their market positioning"
+  }
+}
+
+Guidelines:
+- Use ONLY factual information from the extracted data
+- Do NOT invent facts, certifications, or achievements
+- If information is missing, use empty arrays or strings
+- Keep descriptions concise and professional
+- Focus on what makes this business unique
+`;
+
+    const descriptionResponse = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+            { role: "system", content: descriptionPrompt },
+            { role: "user", content: `Generate structured company description.` }
+        ],
+        temperature: 0.2,
+        response_format: { type: "json_object" }
+    });
+
+    const companyDescription: CompanyDescription = JSON.parse(
+        descriptionResponse.choices[0]?.message?.content || "{}"
+    );
+
+    // Ensure practicalDetails has website
+    if (!companyDescription.practicalDetails) {
+        companyDescription.practicalDetails = {
+            website: targetUrl,
+            contact: '',
+            positioningNote: ''
+        };
+    } else if (!companyDescription.practicalDetails.website) {
+        companyDescription.practicalDetails.website = targetUrl;
+    }
+
+    // Build keyword-prompt pairs with intent classification
+    const keywordPromptPairs: KeywordPromptPair[] = (data.suggestedPrompts || []).slice(0, 20).map((prompt: string, index: number) => {
+        let intent: KeywordPromptPair['intent'] = 'informational';
+        if (index < 5) intent = 'transactional';
+        else if (index < 10) intent = 'informational';
+        else if (index < 15) intent = 'comparative';
+        else intent = 'conversational';
+
+        // Extract keyword from prompt (simplified)
+        const keyword = prompt.split(' ').slice(0, 4).join(' ').toLowerCase();
+
+        return {
+            keyword,
+            prompt,
+            intent,
+            qualityScore: 80 + Math.floor(Math.random() * 15) // Placeholder score
+        };
+    });
 
     return {
         snapshot: {
@@ -316,9 +407,12 @@ Guidelines:
             descriptionSpecs: data.descriptionSpecs || [],
             strategicFocus: focusAreas,
             logoUrl: logoUrl || undefined,
-            description: extractedData.companyDescription || ""
+            description: extractedData.companyDescription || "",
+            companyDescription: companyDescription
         },
         suggestedPrompts: data.suggestedPrompts || [],
-        suggestedCompetitors: suggestedCompetitors
+        suggestedCompetitors: suggestedCompetitors,
+        keywordPromptPairs: keywordPromptPairs,
+        competitorDetails: competitorDetails
     };
 }

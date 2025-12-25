@@ -1,3 +1,33 @@
+// Structured company description following blueprint
+export interface CompanyDescription {
+  overview: string;
+  productsAndServices: string[];
+  targetMarket: string[];
+  keyDifferentiators: string[];
+  notableInfo: string[];
+  practicalDetails: {
+    website: string;
+    contact: string;
+    positioningNote: string;
+  };
+}
+
+// Keyword-Prompt pair with quality metadata
+export interface KeywordPromptPair {
+  keyword: string;
+  prompt: string;
+  intent: 'transactional' | 'informational' | 'comparative' | 'conversational';
+  qualityScore?: number;
+}
+
+// Competitor with detection metadata
+export interface CompetitorInfo {
+  name: string;
+  type: 'direct' | 'indirect';
+  reason: string;
+  confidence?: number;
+}
+
 export interface EntitySnapshot {
   businessName: string;
   industry: string;
@@ -7,6 +37,8 @@ export interface EntitySnapshot {
   strategicFocus?: string[];
   logoUrl?: string;
   description?: string;
+  // Structured company description (new)
+  companyDescription?: CompanyDescription;
 }
 
 export interface PromptResult {

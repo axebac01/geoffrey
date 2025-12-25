@@ -12,6 +12,9 @@ import { logger } from "./logger";
 import ga4Routes from "./routes/ga4";
 import metricsRoutes from "./routes/metrics";
 import trackingRoutes from "./routes/tracking";
+import promptsRoutes from "./routes/prompts";
+import geoRoutes from "./routes/geo";
+import userRoutes from "./routes/user";
 
 dotenv.config();
 
@@ -26,6 +29,10 @@ app.use(express.json());
 app.use("/api/integrations/ga4", ga4Routes);
 app.use("/api/metrics", metricsRoutes);
 app.use("/api/tracking", trackingRoutes);
+app.use("/api/prompts", promptsRoutes);
+app.use("/api/geo", geoRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/businesses", userRoutes);
 app.use("/", trackingRoutes); // For /t.js
 
 // --- Endpoints ---

@@ -10,7 +10,7 @@ interface OnboardingProps {
     isLoading: boolean;
 }
 
-export function Onboarding({ onComplete, isLoading }: OnboardingProps) {
+export function Onboarding({ onComplete, isLoading: _isLoading }: OnboardingProps) {
     const [view, setView] = useState<'landing' | 'scanning' | 'profile' | 'prompts' | 'competitors'>('landing');
 
     const [snapshot, setSnapshot] = useState<EntitySnapshot>({

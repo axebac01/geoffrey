@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { AITrafficCard } from '../../components/AITrafficCard';
+import { OnboardingChecklist } from '../../components/OnboardingChecklist';
 
 export function DashboardOverview() {
     const { user } = useUser();
@@ -47,6 +48,11 @@ export function DashboardOverview() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '1.8rem' }}>Welcome back, {user?.firstName}!</h1>
                 <button className="btn-secondary" onClick={() => navigate('/dashboard/scan')}>+ New Scan</button>
+            </div>
+
+            {/* Onboarding Checklist */}
+            <div style={{ marginBottom: '2rem' }}>
+                <OnboardingChecklist />
             </div>
 
             {/* AI Traffic Card */}

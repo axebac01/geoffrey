@@ -35,8 +35,9 @@ export function DashboardLayout() {
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
                     <SidebarLink to="/dashboard" end>📊 Overview</SidebarLink>
                     <SidebarLink to="/dashboard/ai-traffic">🤖 AI Traffic</SidebarLink>
-                    <SidebarLink to="/dashboard/scan">🔍 New Scan</SidebarLink>
-                    <SidebarLink to="/dashboard/improve">⚡ Improvements</SidebarLink>
+                    <SidebarLink to="/dashboard/prompts">🔍 Prompt Testing</SidebarLink>
+                    <SidebarLink to="/dashboard/improve">⚡ GEO Center</SidebarLink>
+                    <SidebarLink to="/dashboard/scan">✨ New Scan</SidebarLink>
                     <SidebarLink to="/dashboard/profile">👤 Profile</SidebarLink>
                     
                     <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid #30363d' }}>

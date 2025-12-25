@@ -1,0 +1,539 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth, useUser } from '@clerk/clerk-react';
+import { AuthLayout } from '../../components/layouts/AuthLayout';
+import type { EntitySnapshot, CompanyDescription } from '../../types';
+
+interface ScanResult {
+    snapshot: EntitySnapshot;
+    suggestedPrompts: string[];
+    suggestedCompetitors: string[];
+}
+
+type TabType = 'description' | 'competitors' | 'prompts';
+
+const defaultCompanyDescription: CompanyDescription = {
+    overview: '',
+    productsAndServices: [],
+    targetMarket: [],
+    keyDifferentiators: [],
+    notableInfo: [],
+    practicalDetails: {
+        website: '',
+        contact: '',
+        positioningNote: ''
+    }
+};
+
+export function ReviewStep() {
+    const navigate = useNavigate();
+    const { getToken } = useAuth();
+    const { user } = useUser();
+    const [activeTab, setActiveTab] = useState<TabType>('description');
+    const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+    const [snapshot, setSnapshot] = useState<EntitySnapshot | null>(null);
+    const [companyDescription, setCompanyDescription] = useState<CompanyDescription>(defaultCompanyDescription);
+    const [competitors, setCompetitors] = useState<string[]>([]);
+    const [prompts, setPrompts] = useState<string[]>([]);
+    const [newCompetitor, setNewCompetitor] = useState('');
+    const [newPrompt, setNewPrompt] = useState('');
+    const [newService, setNewService] = useState('');
+    const [newMarket, setNewMarket] = useState('');
+    const [newDifferentiator, setNewDifferentiator] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const storedResult = sessionStorage.getItem('onboarding_scan_result');
+        
+        if (!storedResult) {
+            navigate('/onboarding/company');
+            return;
+        }
+
+        const result: ScanResult = JSON.parse(storedResult);
+        setScanResult(result);
+        setSnapshot(result.snapshot);
+        setCompetitors(result.suggestedCompetitors || []);
+        setPrompts(result.suggestedPrompts || []);
+        
+        // Initialize company description from snapshot
+        if (result.snapshot.companyDescription) {
+            setCompanyDescription(result.snapshot.companyDescription);
+        } else {
+            // Fallback to basic data
+            setCompanyDescription({
+                ...defaultCompanyDescription,
+                overview: result.snapshot.description || '',
+                productsAndServices: result.snapshot.descriptionSpecs || [],
+                practicalDetails: {
+                    website: result.snapshot.website || '',
+                    contact: '',
+                    positioningNote: result.snapshot.industry || ''
+                }
+            });
+        }
+    }, [navigate]);
+
+    const handleContinue = async () => {
+        if (!snapshot) return;
+        
+        setIsSubmitting(true);
+
+        try {
+            // Update snapshot with company description
+            const updatedSnapshot: EntitySnapshot = {
+                ...snapshot,
+                companyDescription
+            };
+
+            // Store the final reviewed data
+            sessionStorage.setItem('onboarding_final', JSON.stringify({
+                snapshot: updatedSnapshot,
+                prompts,
+                competitors
+            }));
+
+            navigate('/onboarding/plan');
+        } catch (err) {
+            console.error('Error:', err);
+            setIsSubmitting(false);
+        }
+    };
+
+    // List management helpers
+    const addToList = (list: string[], setList: (l: string[]) => void, item: string, setItem: (s: string) => void, max?: number) => {
+        if (item.trim() && (!max || list.length < max)) {
+            setList([...list, item.trim()]);
+            setItem('');
+        }
+    };
+
+    const removeFromList = (list: string[], setList: (l: string[]) => void, index: number) => {
+        setList(list.filter((_, i) => i !== index));
+    };
+
+    if (!snapshot) {
+        return (
+            <AuthLayout title="Loading...">
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <p style={{ color: '#8b949e' }}>Loading your scan results...</p>
+                </div>
+            </AuthLayout>
+        );
+    }
+
+    const tabs: { id: TabType; label: string; count?: number }[] = [
+        { id: 'description', label: 'Company Info' },
+        { id: 'competitors', label: 'Competitors', count: competitors.length },
+        { id: 'prompts', label: 'AI Prompts', count: prompts.length },
+    ];
+
+    return (
+        <AuthLayout
+            title="Review your profile"
+            subtitle="Verify the information we found about your business"
+        >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {/* Tabs */}
+                <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    borderBottom: '1px solid #30363d',
+                    paddingBottom: '0.5rem'
+                }}>
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                background: activeTab === tab.id 
+                                    ? 'rgba(88, 166, 255, 0.1)' 
+                                    : 'transparent',
+                                border: activeTab === tab.id 
+                                    ? '1px solid rgba(88, 166, 255, 0.3)' 
+                                    : '1px solid transparent',
+                                borderRadius: '6px',
+                                color: activeTab === tab.id ? '#58a6ff' : '#8b949e',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem',
+                                fontWeight: activeTab === tab.id ? 500 : 400,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            {tab.label}
+                            {tab.count !== undefined && (
+                                <span style={{
+                                    background: 'rgba(48, 54, 61, 0.5)',
+                                    padding: '0.1rem 0.4rem',
+                                    borderRadius: '10px',
+                                    fontSize: '0.75rem'
+                                }}>
+                                    {tab.count}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab Content */}
+                <div style={{ 
+                    minHeight: '350px',
+                    maxHeight: '450px',
+                    overflowY: 'auto',
+                    paddingRight: '0.5rem'
+                }}>
+                    {activeTab === 'description' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {/* Basic Info */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', color: '#8b949e', fontSize: '0.8rem' }}>
+                                        Business Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={snapshot.businessName}
+                                        onChange={(e) => setSnapshot({ ...snapshot, businessName: e.target.value })}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', color: '#8b949e', fontSize: '0.8rem' }}>
+                                        Region
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={snapshot.region}
+                                        onChange={(e) => setSnapshot({ ...snapshot, region: e.target.value })}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Overview */}
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.4rem', color: '#8b949e', fontSize: '0.8rem' }}>
+                                    Overview
+                                </label>
+                                <textarea
+                                    value={companyDescription.overview}
+                                    onChange={(e) => setCompanyDescription({ ...companyDescription, overview: e.target.value })}
+                                    rows={2}
+                                    placeholder="Brief overview of your business..."
+                                    style={{ ...inputStyle, resize: 'vertical' }}
+                                />
+                            </div>
+
+                            {/* Products & Services */}
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.4rem', color: '#8b949e', fontSize: '0.8rem' }}>
+                                    Products & Services
+                                </label>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        value={newService}
+                                        onChange={(e) => setNewService(e.target.value)}
+                                        placeholder="Add service..."
+                                        onKeyPress={(e) => e.key === 'Enter' && addToList(companyDescription.productsAndServices, (items) => setCompanyDescription({ ...companyDescription, productsAndServices: items }), newService, setNewService)}
+                                        style={{ ...inputStyle, flex: 1 }}
+                                    />
+                                    <button onClick={() => addToList(companyDescription.productsAndServices, (items) => setCompanyDescription({ ...companyDescription, productsAndServices: items }), newService, setNewService)} style={addButtonStyle}>+</button>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                    {companyDescription.productsAndServices.map((item, i) => (
+                                        <span key={i} style={tagStyle}>
+                                            {item}
+                                            <button onClick={() => removeFromList(companyDescription.productsAndServices, (items) => setCompanyDescription({ ...companyDescription, productsAndServices: items }), i)} style={removeTagStyle}>×</button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Target Market */}
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.4rem', color: '#8b949e', fontSize: '0.8rem' }}>
+                                    Target Market
+                                </label>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        value={newMarket}
+                                        onChange={(e) => setNewMarket(e.target.value)}
+                                        placeholder="Add target segment..."
+                                        onKeyPress={(e) => e.key === 'Enter' && addToList(companyDescription.targetMarket, (items) => setCompanyDescription({ ...companyDescription, targetMarket: items }), newMarket, setNewMarket)}
+                                        style={{ ...inputStyle, flex: 1 }}
+                                    />
+                                    <button onClick={() => addToList(companyDescription.targetMarket, (items) => setCompanyDescription({ ...companyDescription, targetMarket: items }), newMarket, setNewMarket)} style={addButtonStyle}>+</button>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                    {companyDescription.targetMarket.map((item, i) => (
+                                        <span key={i} style={tagStyle}>
+                                            {item}
+                                            <button onClick={() => removeFromList(companyDescription.targetMarket, (items) => setCompanyDescription({ ...companyDescription, targetMarket: items }), i)} style={removeTagStyle}>×</button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Key Differentiators */}
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.4rem', color: '#8b949e', fontSize: '0.8rem' }}>
+                                    Key Differentiators
+                                </label>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        value={newDifferentiator}
+                                        onChange={(e) => setNewDifferentiator(e.target.value)}
+                                        placeholder="What makes you unique..."
+                                        onKeyPress={(e) => e.key === 'Enter' && addToList(companyDescription.keyDifferentiators, (items) => setCompanyDescription({ ...companyDescription, keyDifferentiators: items }), newDifferentiator, setNewDifferentiator)}
+                                        style={{ ...inputStyle, flex: 1 }}
+                                    />
+                                    <button onClick={() => addToList(companyDescription.keyDifferentiators, (items) => setCompanyDescription({ ...companyDescription, keyDifferentiators: items }), newDifferentiator, setNewDifferentiator)} style={addButtonStyle}>+</button>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                    {companyDescription.keyDifferentiators.map((item, i) => (
+                                        <span key={i} style={{ ...tagStyle, background: 'rgba(63, 185, 80, 0.15)', borderColor: 'rgba(63, 185, 80, 0.3)' }}>
+                                            {item}
+                                            <button onClick={() => removeFromList(companyDescription.keyDifferentiators, (items) => setCompanyDescription({ ...companyDescription, keyDifferentiators: items }), i)} style={removeTagStyle}>×</button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Positioning Note */}
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.4rem', color: '#8b949e', fontSize: '0.8rem' }}>
+                                    Market Positioning
+                                </label>
+                                <input
+                                    type="text"
+                                    value={companyDescription.practicalDetails.positioningNote}
+                                    onChange={(e) => setCompanyDescription({
+                                        ...companyDescription,
+                                        practicalDetails: { ...companyDescription.practicalDetails, positioningNote: e.target.value }
+                                    })}
+                                    placeholder="e.g., Premium B2B SaaS for SMBs"
+                                    style={inputStyle}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'competitors' && (
+                        <div>
+                            <p style={{ color: '#8b949e', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                These competitors will be tracked in your Share of Voice analysis. Max 10.
+                            </p>
+                            
+                            {/* Add competitor input */}
+                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <input
+                                    type="text"
+                                    value={newCompetitor}
+                                    onChange={(e) => setNewCompetitor(e.target.value)}
+                                    placeholder="Add competitor..."
+                                    onKeyPress={(e) => e.key === 'Enter' && addToList(competitors, setCompetitors, newCompetitor, setNewCompetitor, 10)}
+                                    disabled={competitors.length >= 10}
+                                    style={{ ...inputStyle, flex: 1 }}
+                                />
+                                <button
+                                    onClick={() => addToList(competitors, setCompetitors, newCompetitor, setNewCompetitor, 10)}
+                                    disabled={!newCompetitor.trim() || competitors.length >= 10}
+                                    style={addButtonStyle}
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            {/* Competitor list */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {competitors.map((competitor, index) => (
+                                    <div
+                                        key={index}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '0.6rem 0.75rem',
+                                            background: 'rgba(13, 17, 23, 0.6)',
+                                            border: '1px solid #30363d',
+                                            borderRadius: '6px'
+                                        }}
+                                    >
+                                        <span style={{ color: '#c9d1d9', fontSize: '0.9rem' }}>{competitor}</span>
+                                        <button
+                                            onClick={() => removeFromList(competitors, setCompetitors, index)}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#f85149',
+                                                cursor: 'pointer',
+                                                padding: '0.25rem 0.5rem',
+                                                fontSize: '0.8rem'
+                                            }}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                                {competitors.length === 0 && (
+                                    <p style={{ color: '#8b949e', textAlign: 'center', padding: '1rem' }}>
+                                        No competitors added yet
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'prompts' && (
+                        <div>
+                            <p style={{ color: '#8b949e', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                These are the AI search queries we'll test your visibility against.
+                            </p>
+                            
+                            {/* Add prompt input */}
+                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <input
+                                    type="text"
+                                    value={newPrompt}
+                                    onChange={(e) => setNewPrompt(e.target.value)}
+                                    placeholder="Add a search query..."
+                                    onKeyPress={(e) => e.key === 'Enter' && addToList(prompts, setPrompts, newPrompt, setNewPrompt)}
+                                    style={{ ...inputStyle, flex: 1 }}
+                                />
+                                <button
+                                    onClick={() => addToList(prompts, setPrompts, newPrompt, setNewPrompt)}
+                                    disabled={!newPrompt.trim()}
+                                    style={addButtonStyle}
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            {/* Prompt list */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {prompts.map((prompt, index) => (
+                                    <div
+                                        key={index}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '0.6rem 0.75rem',
+                                            background: 'rgba(13, 17, 23, 0.6)',
+                                            border: '1px solid #30363d',
+                                            borderRadius: '6px',
+                                            gap: '0.5rem'
+                                        }}
+                                    >
+                                        <span style={{ 
+                                            color: '#c9d1d9', 
+                                            fontSize: '0.85rem',
+                                            flex: 1,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            "{prompt}"
+                                        </span>
+                                        <button
+                                            onClick={() => removeFromList(prompts, setPrompts, index)}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#f85149',
+                                                cursor: 'pointer',
+                                                padding: '0.25rem 0.5rem',
+                                                fontSize: '0.8rem',
+                                                flexShrink: 0
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                                {prompts.length === 0 && (
+                                    <p style={{ color: '#8b949e', textAlign: 'center', padding: '1rem' }}>
+                                        No prompts added yet
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Continue button */}
+                <button
+                    onClick={handleContinue}
+                    disabled={isSubmitting || !snapshot.businessName}
+                    style={{
+                        width: '100%',
+                        padding: '1rem',
+                        background: isSubmitting 
+                            ? 'rgba(88, 166, 255, 0.5)' 
+                            : 'linear-gradient(90deg, #58a6ff, #bc8cf2)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        marginTop: '0.5rem'
+                    }}
+                >
+                    {isSubmitting ? 'Saving...' : 'Continue →'}
+                </button>
+            </div>
+        </AuthLayout>
+    );
+}
+
+// Styles
+const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.6rem 0.75rem',
+    background: 'rgba(13, 17, 23, 0.8)',
+    border: '1px solid #30363d',
+    borderRadius: '6px',
+    color: '#c9d1d9',
+    fontSize: '0.9rem',
+    outline: 'none'
+};
+
+const addButtonStyle: React.CSSProperties = {
+    padding: '0.6rem 1rem',
+    background: 'rgba(88, 166, 255, 0.2)',
+    border: '1px solid rgba(88, 166, 255, 0.3)',
+    borderRadius: '6px',
+    color: '#58a6ff',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    fontWeight: 500
+};
+
+const tagStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    padding: '0.3rem 0.6rem',
+    background: 'rgba(88, 166, 255, 0.1)',
+    border: '1px solid rgba(88, 166, 255, 0.2)',
+    borderRadius: '4px',
+    color: '#c9d1d9',
+    fontSize: '0.8rem'
+};
+
+const removeTagStyle: React.CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    color: '#8b949e',
+    cursor: 'pointer',
+    padding: 0,
+    fontSize: '1rem',
+    lineHeight: 1
+};

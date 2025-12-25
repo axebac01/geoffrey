@@ -10,9 +10,15 @@ import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { DashboardOverview } from './pages/dashboard/Overview';
 import { NewScanPage } from './pages/dashboard/NewScan';
 import { ImprovementsPage } from './pages/dashboard/Improvements';
+import { PromptsPage } from './pages/dashboard/Prompts';
 import { ProfilePage } from './pages/dashboard/Profile';
 import { SettingsPage } from './pages/dashboard/Settings';
 import { AITrafficPage } from './pages/dashboard/AITraffic';
+// Onboarding flow pages
+import { CompanyStep } from './pages/onboarding/CompanyStep';
+import { ScanningStep } from './pages/onboarding/ScanningStep';
+import { ReviewStep } from './pages/onboarding/ReviewStep';
+import { PlanStep } from './pages/onboarding/PlanStep';
 import type { EntitySnapshot, AnalysisResult, GeneratorOutput } from './types';
 
 type Step = 'onboarding' | 'analyzing' | 'results';
@@ -145,6 +151,60 @@ function App() {
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
 
+      {/* Onboarding Flow (Protected) */}
+      <Route
+        path="/onboarding/company"
+        element={
+          <>
+            <SignedIn>
+              <CompanyStep />
+            </SignedIn>
+            <SignedOut>
+              <RedirectToSignIn />
+            </SignedOut>
+          </>
+        }
+      />
+      <Route
+        path="/onboarding/scanning"
+        element={
+          <>
+            <SignedIn>
+              <ScanningStep />
+            </SignedIn>
+            <SignedOut>
+              <RedirectToSignIn />
+            </SignedOut>
+          </>
+        }
+      />
+      <Route
+        path="/onboarding/review"
+        element={
+          <>
+            <SignedIn>
+              <ReviewStep />
+            </SignedIn>
+            <SignedOut>
+              <RedirectToSignIn />
+            </SignedOut>
+          </>
+        }
+      />
+      <Route
+        path="/onboarding/plan"
+        element={
+          <>
+            <SignedIn>
+              <PlanStep />
+            </SignedIn>
+            <SignedOut>
+              <RedirectToSignIn />
+            </SignedOut>
+          </>
+        }
+      />
+
       {/* Dashboard (Protected) */}
       <Route
         path="/dashboard"
@@ -162,6 +222,7 @@ function App() {
         <Route index element={<DashboardOverview />} />
         <Route path="scan" element={<NewScanPage />} />
         <Route path="ai-traffic" element={<AITrafficPage />} />
+        <Route path="prompts" element={<PromptsPage />} />
         <Route path="improve" element={<ImprovementsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
