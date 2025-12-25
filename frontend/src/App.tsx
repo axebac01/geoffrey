@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut, RedirectToSignIn, UserButton, useAuth } from "@clerk/clerk-react";
+import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { SignedIn, SignedOut, RedirectToSignIn, useAuth } from "@clerk/clerk-react";
 import { Onboarding } from './components/Onboarding';
 import { Results } from './components/Results';
 import { LoadingScreen } from './components/LoadingScreen';
@@ -26,12 +26,46 @@ type Step = 'onboarding' | 'analyzing' | 'results';
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getToken, isSignedIn } = useAuth();
   const [step, setStep] = useState<Step>('onboarding');
   const [snapshot, setSnapshot] = useState<EntitySnapshot | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [assets, setAssets] = useState<GeneratorOutput | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Redirect signed-in users from homepage to onboarding or dashboard
+  useEffect(() => {
+    async function handleSignedInUser() {
+      // Only redirect on homepage, not on other routes
+      if (location.pathname !== '/') return;
+      if (!isSignedIn) return;
+      
+      try {
+        const token = await getToken();
+        const res = await fetch('/api/onboarding/next-step', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isComplete) {
+            navigate('/dashboard', { replace: true });
+          } else {
+            navigate(`/onboarding/${data.nextStep}`, { replace: true });
+          }
+        } else {
+          // API failed, assume new user
+          navigate('/onboarding/company', { replace: true });
+        }
+      } catch (error) {
+        // Error checking, redirect to onboarding
+        navigate('/onboarding/company', { replace: true });
+      }
+    }
+    
+    handleSignedInUser();
+  }, [isSignedIn, getToken, navigate, location.pathname]);
 
   // Phase 1: Analyze Visibility (with auth support)
   const handleAnalyze = async (data: EntitySnapshot, prompts: string[], competitors: string[] = []) => {
@@ -118,10 +152,10 @@ function App() {
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <SignedIn>
-                <button className="btn-secondary" onClick={() => navigate('/dashboard')} style={{ padding: '0.5rem 1rem' }}>
-                  Dashboard
-                </button>
-                <UserButton afterSignOutUrl="/" />
+                {/* Signed-in users are redirected, so this won't show */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <p style={{ color: '#8b949e', fontSize: '0.9rem', margin: 0 }}>Redirecting...</p>
+                </div>
               </SignedIn>
               <SignedOut>
                 <button className="btn-secondary" onClick={() => navigate('/sign-in')} style={{ padding: '0.5rem 1rem' }}>

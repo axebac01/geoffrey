@@ -22,7 +22,9 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
                 });
 
                 if (!res.ok) {
-                    setLoading(false);
+                    // API failed - redirect to onboarding start
+                    console.error('Onboarding check failed, redirecting to onboarding');
+                    navigate('/onboarding/company');
                     return;
                 }
 
@@ -37,7 +39,8 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
                 }
             } catch (error) {
                 console.error('Failed to check onboarding:', error);
-                setLoading(false);
+                // On any error, redirect to onboarding start
+                navigate('/onboarding/company');
             }
         }
 
