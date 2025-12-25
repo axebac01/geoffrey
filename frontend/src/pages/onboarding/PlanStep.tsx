@@ -74,15 +74,39 @@ export function PlanStep() {
     const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
 
     useEffect(() => {
-        const storedData = sessionStorage.getItem('onboarding_final');
-        
-        if (!storedData) {
-            navigate('/onboarding/company');
-            return;
+        async function checkStep() {
+            try {
+                const token = await getToken();
+                const res = await fetch('/api/onboarding/status', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const onboarding = data.onboarding;
+                    
+                    // Check if user should be on this step
+                    if (onboarding && !onboarding.completed_steps?.includes('review')) {
+                        navigate('/onboarding/review');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check onboarding status:', error);
+            }
+
+            // Check sessionStorage as fallback
+            const storedData = sessionStorage.getItem('onboarding_final');
+            if (!storedData) {
+                navigate('/onboarding/company');
+                return;
+            }
+
+            setOnboardingData(JSON.parse(storedData));
         }
 
-        setOnboardingData(JSON.parse(storedData));
-    }, [navigate]);
+        checkStep();
+    }, [navigate, getToken]);
 
     const handleStartTrial = async () => {
         if (!onboardingData) return;
@@ -116,6 +140,20 @@ export function PlanStep() {
             sessionStorage.removeItem('onboarding_company');
             sessionStorage.removeItem('onboarding_scan_result');
             sessionStorage.removeItem('onboarding_final');
+
+            // Mark onboarding as complete
+            await fetch('/api/onboarding/status', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    currentStep: 'completed',
+                    completedSteps: ['company', 'scanning', 'review', 'plan'],
+                    isComplete: true
+                })
+            });
 
             // Navigate to dashboard
             navigate('/dashboard');

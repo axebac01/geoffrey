@@ -29,6 +29,20 @@ export function CompanyStep() {
                 website: website.trim()
             }));
 
+            // Update onboarding progress
+            const token = await getToken();
+            await fetch('/api/onboarding/status', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    currentStep: 'scanning',
+                    completedSteps: ['company']
+                })
+            });
+
             navigate('/onboarding/scanning');
         } catch (err: any) {
             setError(err.message || 'Something went wrong');

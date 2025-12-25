@@ -1,7 +1,29 @@
-import { SignUp } from "@clerk/clerk-react";
+import { SignUp, useAuth } from "@clerk/clerk-react";
 import { AuthLayout } from "../../components/layouts/AuthLayout";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function SignUpPage() {
+    const { isSignedIn, getToken } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        async function redirectAfterSignUp() {
+            if (!isSignedIn) return;
+
+            try {
+                const token = await getToken();
+                // New users always start at company step
+                navigate('/onboarding/company');
+            } catch (error) {
+                console.error('Failed to redirect after sign-up:', error);
+                navigate('/onboarding/company'); // Fallback
+            }
+        }
+
+        redirectAfterSignUp();
+    }, [isSignedIn, getToken, navigate]);
+
     return (
         <AuthLayout
             title="Create your account"

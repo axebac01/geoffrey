@@ -203,7 +203,33 @@ CREATE TRIGGER trigger_update_checklist_progress
   EXECUTE FUNCTION update_checklist_progress();
 
 -- ============================================
--- 8. Initial Data Setup
+-- 8. User Onboarding Tracking Table
+-- ============================================
+CREATE TABLE IF NOT EXISTS user_onboarding (
+  user_id TEXT PRIMARY KEY,
+  current_step TEXT NOT NULL DEFAULT 'company' 
+    CHECK (current_step IN ('company', 'scanning', 'review', 'plan', 'completed')),
+  completed_steps JSONB DEFAULT '[]', -- Array of completed step names
+  is_complete BOOLEAN NOT NULL DEFAULT false,
+  started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  completed_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_user_onboarding_user_id ON user_onboarding(user_id);
+
+-- Enable RLS
+ALTER TABLE user_onboarding ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policy
+DROP POLICY IF EXISTS "Users can manage their own onboarding" ON user_onboarding;
+CREATE POLICY "Users can manage their own onboarding" 
+  ON user_onboarding FOR ALL 
+  USING (user_id IS NOT NULL);
+
+-- ============================================
+-- 9. Initial Data Setup
 -- ============================================
 -- No initial data needed - tables will be populated by the application
 

@@ -15,6 +15,7 @@ import trackingRoutes from "./routes/tracking";
 import promptsRoutes from "./routes/prompts";
 import geoRoutes from "./routes/geo";
 import userRoutes from "./routes/user";
+import onboardingRoutes from "./routes/onboarding";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api/prompts", promptsRoutes);
 app.use("/api/geo", geoRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/businesses", userRoutes);
+app.use("/api/onboarding", onboardingRoutes);
 app.use("/", trackingRoutes); // For /t.js
 
 // --- Endpoints ---

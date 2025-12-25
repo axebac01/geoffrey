@@ -19,6 +19,7 @@ import { CompanyStep } from './pages/onboarding/CompanyStep';
 import { ScanningStep } from './pages/onboarding/ScanningStep';
 import { ReviewStep } from './pages/onboarding/ReviewStep';
 import { PlanStep } from './pages/onboarding/PlanStep';
+import { OnboardingGuard } from './components/OnboardingGuard';
 import type { EntitySnapshot, AnalysisResult, GeneratorOutput } from './types';
 
 type Step = 'onboarding' | 'analyzing' | 'results';
@@ -211,7 +212,9 @@ function App() {
         element={
           <>
             <SignedIn>
-              <DashboardLayout />
+              <OnboardingGuard>
+                <DashboardLayout />
+              </OnboardingGuard>
             </SignedIn>
             <SignedOut>
               <RedirectToSignIn />

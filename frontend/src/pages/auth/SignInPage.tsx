@@ -1,7 +1,39 @@
-import { SignIn } from "@clerk/clerk-react";
+import { SignIn, useAuth } from "@clerk/clerk-react";
 import { AuthLayout } from "../../components/layouts/AuthLayout";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function SignInPage() {
+    const { isSignedIn, getToken } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        async function redirectAfterSignIn() {
+            if (!isSignedIn) return;
+
+            try {
+                const token = await getToken();
+                const res = await fetch('/api/onboarding/next-step', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.isComplete) {
+                        navigate('/dashboard');
+                    } else {
+                        navigate(`/onboarding/${data.nextStep}`);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check onboarding:', error);
+                navigate('/dashboard'); // Fallback
+            }
+        }
+
+        redirectAfterSignIn();
+    }, [isSignedIn, getToken, navigate]);
+
     return (
         <AuthLayout
             title="Welcome back"
@@ -10,7 +42,6 @@ export default function SignInPage() {
             <SignIn 
                 routing="path" 
                 path="/sign-in"
-                afterSignInUrl="/dashboard"
                 appearance={{
                     elements: {
                         rootBox: {

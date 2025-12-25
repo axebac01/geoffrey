@@ -18,16 +18,40 @@ export function ScanningStep() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const companyData = sessionStorage.getItem('onboarding_company');
-        
-        if (!companyData) {
-            navigate('/onboarding/company');
-            return;
+        async function checkStep() {
+            try {
+                const token = await getToken();
+                const res = await fetch('/api/onboarding/status', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const onboarding = data.onboarding;
+                    
+                    // Check if user should be on this step
+                    if (onboarding && !onboarding.completed_steps?.includes('company')) {
+                        navigate('/onboarding/company');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check onboarding status:', error);
+            }
+
+            // Check sessionStorage as fallback
+            const companyData = sessionStorage.getItem('onboarding_company');
+            if (!companyData) {
+                navigate('/onboarding/company');
+                return;
+            }
+
+            const { website } = JSON.parse(companyData);
+            performScan(website);
         }
 
-        const { website } = JSON.parse(companyData);
-        performScan(website);
-    }, []);
+        checkStep();
+    }, [navigate, getToken]);
 
     useEffect(() => {
         // Animate through steps
@@ -61,6 +85,19 @@ export function ScanningStep() {
             
             // Store scan results for review step
             sessionStorage.setItem('onboarding_scan_result', JSON.stringify(data));
+            
+            // Update onboarding progress
+            await fetch('/api/onboarding/status', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    currentStep: 'review',
+                    completedSteps: ['company', 'scanning']
+                })
+            });
             
             // Navigate to review after animation completes
             setTimeout(() => {

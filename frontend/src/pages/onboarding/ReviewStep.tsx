@@ -43,36 +43,60 @@ export function ReviewStep() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        const storedResult = sessionStorage.getItem('onboarding_scan_result');
-        
-        if (!storedResult) {
-            navigate('/onboarding/company');
-            return;
+        async function checkStep() {
+            try {
+                const token = await getToken();
+                const res = await fetch('/api/onboarding/status', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const onboarding = data.onboarding;
+                    
+                    // Check if user should be on this step
+                    if (onboarding && !onboarding.completed_steps?.includes('scanning')) {
+                        navigate('/onboarding/scanning');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check onboarding status:', error);
+            }
+
+            // Check sessionStorage as fallback
+            const storedResult = sessionStorage.getItem('onboarding_scan_result');
+            if (!storedResult) {
+                navigate('/onboarding/company');
+                return;
+            }
+
+            const result: ScanResult = JSON.parse(storedResult);
+            setScanResult(result);
+            setSnapshot(result.snapshot);
+            setCompetitors(result.suggestedCompetitors || []);
+            setPrompts(result.suggestedPrompts || []);
+            
+            // Initialize company description from snapshot
+            if (result.snapshot.companyDescription) {
+                setCompanyDescription(result.snapshot.companyDescription);
+            } else {
+                // Fallback to basic data
+                setCompanyDescription({
+                    ...defaultCompanyDescription,
+                    overview: result.snapshot.description || '',
+                    productsAndServices: result.snapshot.descriptionSpecs || [],
+                    practicalDetails: {
+                        website: result.snapshot.website || '',
+                        contact: '',
+                        positioningNote: result.snapshot.industry || ''
+                    }
+                });
+            }
         }
 
-        const result: ScanResult = JSON.parse(storedResult);
-        setScanResult(result);
-        setSnapshot(result.snapshot);
-        setCompetitors(result.suggestedCompetitors || []);
-        setPrompts(result.suggestedPrompts || []);
-        
-        // Initialize company description from snapshot
-        if (result.snapshot.companyDescription) {
-            setCompanyDescription(result.snapshot.companyDescription);
-        } else {
-            // Fallback to basic data
-            setCompanyDescription({
-                ...defaultCompanyDescription,
-                overview: result.snapshot.description || '',
-                productsAndServices: result.snapshot.descriptionSpecs || [],
-                practicalDetails: {
-                    website: result.snapshot.website || '',
-                    contact: '',
-                    positioningNote: result.snapshot.industry || ''
-                }
-            });
-        }
-    }, [navigate]);
+        checkStep();
+    }, [navigate, getToken]);
 
     const handleContinue = async () => {
         if (!snapshot) return;
@@ -92,6 +116,20 @@ export function ReviewStep() {
                 prompts,
                 competitors
             }));
+
+            // Update onboarding progress
+            const token = await getToken();
+            await fetch('/api/onboarding/status', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    currentStep: 'plan',
+                    completedSteps: ['company', 'scanning', 'review']
+                })
+            });
 
             navigate('/onboarding/plan');
         } catch (err) {
