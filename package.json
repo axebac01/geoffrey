@@ -2,10 +2,11 @@
   "name": "geoffrey-mvp",
   "version": "1.0.0",
   "description": "\\# Geoffrey.ai — GEO Micro SaaS (Improved MVP Plan)",
-  "main": "index.js",
+  "main": "src/server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test-cli": "ts-node scripts/test-cli.ts",
+    "start": "ts-node src/server.ts",
     "server": "ts-node src/server.ts",
     "dev": "concurrently \"npm run server\" \"npm run frontend\"",
     "frontend": "cd frontend && npm run dev"
