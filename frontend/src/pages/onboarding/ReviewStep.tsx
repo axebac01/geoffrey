@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth } from '@clerk/clerk-react';
 import { AuthLayout } from '../../components/layouts/AuthLayout';
 import type { EntitySnapshot, CompanyDescription } from '../../types';
 
@@ -28,9 +28,7 @@ const defaultCompanyDescription: CompanyDescription = {
 export function ReviewStep() {
     const navigate = useNavigate();
     const { getToken } = useAuth();
-    const { user } = useUser();
     const [activeTab, setActiveTab] = useState<TabType>('description');
-    const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [snapshot, setSnapshot] = useState<EntitySnapshot | null>(null);
     const [companyDescription, setCompanyDescription] = useState<CompanyDescription>(defaultCompanyDescription);
     const [competitors, setCompetitors] = useState<string[]>([]);
@@ -79,7 +77,6 @@ export function ReviewStep() {
                     const scanData = await scanRes.json();
                     if (scanData.scanResult?.scan_data) {
                         const result: ScanResult = scanData.scanResult.scan_data;
-                        setScanResult(result);
                         setSnapshot(result.snapshot);
                         setCompetitors(result.suggestedCompetitors || []);
                         setPrompts(result.suggestedPrompts || []);

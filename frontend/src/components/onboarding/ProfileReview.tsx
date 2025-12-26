@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { EntitySnapshot } from '../types';
+import type { EntitySnapshot } from '../../types';
 
 interface ProfileReviewProps {
     snapshot: EntitySnapshot;
@@ -168,7 +168,7 @@ export function ProfileReview({ snapshot, onEdit, onContinue, onBack }: ProfileR
                             ✨ Strategic Focus
                         </label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
-                            {snapshot.strategicFocus.map((f, i) => (
+                            {snapshot.strategicFocus.map((f: string, i: number) => (
                                 <span key={i} style={{
                                     background: 'rgba(188, 140, 242, 0.1)',
                                     color: '#bc8cf2',

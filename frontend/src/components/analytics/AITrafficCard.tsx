@@ -62,18 +62,16 @@ export function AITrafficCard({ compact = false }: Props) {
     const [summary, setSummary] = useState<AIClicksSummary | null>(null);
     const [detail, setDetail] = useState<AIClicksDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    const [showDetail, setShowDetail] = useState(false);
     const [dateRange, setDateRange] = useState('28');
 
     useEffect(() => {
         loadSummary();
+        loadDetail();
     }, []);
 
     useEffect(() => {
-        if (showDetail) {
-            loadDetail();
-        }
-    }, [showDetail, dateRange]);
+        loadDetail();
+    }, [dateRange]);
 
     async function loadSummary() {
         try {

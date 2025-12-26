@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import chatgptLogo from '../../assets/logos/chatgpt.png';
 import perplexityLogo from '../../assets/logos/perplexity.png';
@@ -40,17 +39,16 @@ interface GA4Status {
 }
 
 const ASSISTANT_CONFIG = {
-    chatgpt: { logo: chatgptLogo, color: '#10a37f', name: 'ChatGPT' },
-    perplexity: { logo: perplexityLogo, color: '#20b2aa', name: 'Perplexity' },
-    gemini: { logo: geminiLogo, color: '#4285f4', name: 'Gemini' },
-    deepseek: { logo: deepseekLogo, color: '#4a9eff', name: 'Deepseek' },
-    copilot: { logo: copilotLogo, color: '#0078d4', name: 'Copilot' },
-    claude: { logo: claudeLogo, color: '#cc785c', name: 'Claude' },
+    chatgpt: { logo: chatgptLogo, color: '#10a37f', name: 'ChatGPT', icon: '🤖' },
+    perplexity: { logo: perplexityLogo, color: '#20b2aa', name: 'Perplexity', icon: '🔍' },
+    gemini: { logo: geminiLogo, color: '#4285f4', name: 'Gemini', icon: '✨' },
+    deepseek: { logo: deepseekLogo, color: '#4a9eff', name: 'Deepseek', icon: '🚀' },
+    copilot: { logo: copilotLogo, color: '#0078d4', name: 'Copilot', icon: '💼' },
+    claude: { logo: claudeLogo, color: '#cc785c', name: 'Claude', icon: '🧠' },
 };
 
 export function AITrafficPage() {
     const { getToken } = useAuth();
-    const navigate = useNavigate();
     
     // GA4 status state
     const [ga4Status, setGa4Status] = useState<GA4Status | null>(null);

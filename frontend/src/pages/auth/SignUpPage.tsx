@@ -12,7 +12,7 @@ export default function SignUpPage() {
             if (!isSignedIn) return;
 
             try {
-                const token = await getToken();
+                await getToken();
                 // New users always start at company step
                 navigate('/onboarding/company');
             } catch (error) {

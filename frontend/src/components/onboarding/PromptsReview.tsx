@@ -7,8 +7,6 @@ interface PromptsReviewProps {
     onBack: () => void;
 }
 
-const PROMPT_TYPES = ['Transactional', 'Informational', 'Comparative', 'Natural Language'];
-
 export function PromptsReview({ prompts, onUpdate, onContinue, onBack }: PromptsReviewProps) {
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editText, setEditText] = useState('');

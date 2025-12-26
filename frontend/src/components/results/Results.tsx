@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AnalysisResult, GeneratorOutput } from '../types';
+import type { AnalysisResult, GeneratorOutput, PromptResult, CompetitorMention } from '../../types';
 import { SovExplanation } from '../analytics/SovExplanation';
 
 interface ResultsProps {
@@ -14,9 +14,9 @@ export function Results({ analysis, onGenerate, isGenerating, assets, reset }: R
     const [showDetails, setShowDetails] = useState(false);
 
     // Categorize results
-    const wins = analysis.results.filter(r => r.judgeResult.isMentioned && (r.judgeResult.rankPosition && r.judgeResult.rankPosition <= 3));
-    const opportunities = analysis.results.filter(r => r.judgeResult.isMentioned && (!r.judgeResult.rankPosition || r.judgeResult.rankPosition > 3));
-    const ghosts = analysis.results.filter(r => !r.judgeResult.isMentioned);
+    const wins = analysis.results.filter((r: PromptResult) => r.judgeResult.isMentioned && (r.judgeResult.rankPosition && r.judgeResult.rankPosition <= 3));
+    const opportunities = analysis.results.filter((r: PromptResult) => r.judgeResult.isMentioned && (!r.judgeResult.rankPosition || r.judgeResult.rankPosition > 3));
+    const ghosts = analysis.results.filter((r: PromptResult) => !r.judgeResult.isMentioned);
 
     const totalTests = analysis.results.length;
     const scorePercentage = analysis.overallScore;
@@ -331,7 +331,7 @@ export function Results({ analysis, onGenerate, isGenerating, assets, reset }: R
                                 Top Competitors
                             </h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {shareOfVoice.topCompetitors.map((competitor, index) => {
+                                {shareOfVoice.topCompetitors.map((competitor: CompetitorMention, index: number) => {
                                     const mentionPercentage = competitor.mentionRate * 100;
                                     const barWidth = (competitor.mentionRate / shareOfVoice.brandMentionRate) * 100;
                                     
@@ -508,7 +508,7 @@ export function Results({ analysis, onGenerate, isGenerating, assets, reset }: R
                     <div className="card" style={{ borderColor: '#238636' }}>
                         <h3 style={{ color: '#238636', marginBottom: '1rem' }}>🏆 Top 3 Rankings</h3>
                         {wins.length === 0 && <p style={{ color: '#8b949e' }}>No top 3 rankings yet.</p>}
-                        {wins.map((r, i) => (
+                        {wins.map((r: PromptResult, i: number) => (
                             <div key={i} style={{ padding: '0.5rem', borderBottom: '1px solid #30363d', marginBottom: '0.5rem' }}>
                                 <div style={{ fontSize: '0.9rem', color: '#c9d1d9' }}>"{r.promptText}"</div>
                                 <div style={{ fontSize: '0.75rem', color: '#58a6ff' }}>Rank #{r.judgeResult.rankPosition} • {r.model}</div>
@@ -520,7 +520,7 @@ export function Results({ analysis, onGenerate, isGenerating, assets, reset }: R
                     <div className="card" style={{ borderColor: '#d29922' }}>
                         <h3 style={{ color: '#d29922', marginBottom: '1rem' }}>⚡ Opportunities</h3>
                         {opportunities.length === 0 && <p style={{ color: '#8b949e' }}>No opportunities found.</p>}
-                        {opportunities.map((r, i) => (
+                        {opportunities.map((r: PromptResult, i: number) => (
                             <div key={i} style={{ padding: '0.5rem', borderBottom: '1px solid #30363d', marginBottom: '0.5rem' }}>
                                 <div style={{ fontSize: '0.9rem', color: '#c9d1d9' }}>"{r.promptText}"</div>
                                 <div style={{ fontSize: '0.75rem', color: '#58a6ff' }}>Rank {r.judgeResult.rankPosition || '>10'} • {r.model}</div>
@@ -531,7 +531,7 @@ export function Results({ analysis, onGenerate, isGenerating, assets, reset }: R
                     {/* Gaps Details */}
                     <div className="card" style={{ borderColor: '#da3633' }}>
                         <h3 style={{ color: '#da3633', marginBottom: '1rem' }}>👻 Visibility Gaps</h3>
-                        {ghosts.map((r, i) => (
+                        {ghosts.map((r: PromptResult, i: number) => (
                             <div key={i} style={{ padding: '0.25rem', color: '#8b949e', fontSize: '0.85rem' }}>
                                 "{r.promptText}" <span style={{ fontSize: '0.7em' }}>({r.model})</span>
                             </div>

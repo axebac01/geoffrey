@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 
 interface WordPressSite {
     id: string;
@@ -22,7 +21,6 @@ export function WordPressConnection({
     onDisconnect,
     onManualConnect,
 }: WordPressConnectionProps) {
-    const { getToken } = useAuth();
     const [showManualForm, setShowManualForm] = useState(false);
     const [manualSiteUrl, setManualSiteUrl] = useState('');
     const [manualPassword, setManualPassword] = useState('');

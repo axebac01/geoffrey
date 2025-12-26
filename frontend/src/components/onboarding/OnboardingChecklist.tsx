@@ -93,32 +93,6 @@ export function OnboardingChecklist() {
         }
     }
 
-    async function markComplete(key: string) {
-        if (!progress) return;
-
-        try {
-            const token = await getToken();
-            await fetch('/api/geo/checklist', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ item: key, value: true })
-            });
-            
-            // Optimistically update UI
-            setProgress({
-                ...progress,
-                [key]: true,
-                completed_items: progress.completed_items + 1,
-                progress_percentage: Math.round(((progress.completed_items + 1) / progress.total_items) * 100)
-            });
-        } catch (error) {
-            console.error('Failed to update checklist:', error);
-        }
-    }
-
     if (loading) {
         return null;
     }
