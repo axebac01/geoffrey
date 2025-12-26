@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "\\# Geoffrey.ai — GEO Micro SaaS (Improved MVP Plan)",
   "main": "src/server.ts",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test-cli": "ts-node scripts/test-cli.ts",
