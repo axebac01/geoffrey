@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { AnalysisResult, GeneratorOutput } from '../types';
-import { SovExplanation } from './SovExplanation';
+import { SovExplanation } from '../analytics/SovExplanation';
 
 interface ResultsProps {
     analysis: AnalysisResult;

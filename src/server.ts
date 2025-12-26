@@ -16,6 +16,7 @@ import promptsRoutes from "./routes/prompts";
 import geoRoutes from "./routes/geo";
 import userRoutes from "./routes/user";
 import onboardingRoutes from "./routes/onboarding";
+import wordpressRoutes from "./routes/wordpress";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(express.json());
 
 // --- Route Modules ---
 app.use("/api/integrations/ga4", ga4Routes);
+app.use("/api/integrations/wordpress", wordpressRoutes);
 app.use("/api/metrics", metricsRoutes);
 app.use("/api/tracking", trackingRoutes);
 app.use("/api/prompts", promptsRoutes);
@@ -143,6 +145,7 @@ app.listen(PORT, () => {
     console.log(`   - POST /api/generate (Protected)`);
     console.log(`   - POST /api/scan-website (Public)`);
     console.log(`   - GET  /api/integrations/ga4/* (GA4 Integration)`);
+    console.log(`   - GET  /api/integrations/wordpress/* (WordPress Integration)`);
     console.log(`   - GET  /api/metrics/ai-clicks (AI Traffic Metrics)`);
     console.log(`   - GET  /t.js (Tracking Script)`);
 });

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { WordPressPublishModal } from '../../components/WordPressPublishModal';
 
 interface GeoAsset {
     id: string;
@@ -22,6 +23,9 @@ export function ImprovementsPage() {
     const [generating, setGenerating] = useState<string | null>(null);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [expandedAsset, setExpandedAsset] = useState<string | null>(null);
+    const [showPublishModal, setShowPublishModal] = useState(false);
+    const [publishContentType, setPublishContentType] = useState<'faq' | 'blog_post'>('faq');
+    const [publishAssetId, setPublishAssetId] = useState<string>('');
 
     // Mock snapshot - in production, this would come from the user's business profile
     const mockSnapshot = {
@@ -92,7 +96,7 @@ export function ImprovementsPage() {
     if (loading) {
         return (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
-                <p style={{ color: '#8b949e' }}>Loading GEO Center...</p>
+                <p style={{ color: '#8b949e' }}>Loading GEO Improvement...</p>
             </div>
         );
     }
@@ -167,8 +171,19 @@ export function ImprovementsPage() {
                                 </div>
                             ))}
 
-                            {/* Copy buttons */}
-                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                            {/* Action buttons */}
+                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                                <button
+                                    onClick={() => {
+                                        setPublishContentType('faq');
+                                        setPublishAssetId(faqAsset.id);
+                                        setShowPublishModal(true);
+                                    }}
+                                    className="btn-primary"
+                                    style={{ fontSize: '0.85rem' }}
+                                >
+                                    📝 Publish to WordPress
+                                </button>
                                 <button
                                     onClick={() => copyToClipboard(faqAsset.content, 'faq-md')}
                                     className="btn-secondary"
@@ -330,6 +345,18 @@ export function ImprovementsPage() {
                     />
                 </div>
             </div>
+
+            {/* WordPress Publish Modal */}
+            <WordPressPublishModal
+                isOpen={showPublishModal}
+                onClose={() => setShowPublishModal(false)}
+                contentType={publishContentType}
+                geoAssetId={publishAssetId}
+                defaultTitle={publishContentType === 'faq' ? 'Frequently Asked Questions' : undefined}
+                onSuccess={() => {
+                    // Optionally reload assets or show success message
+                }}
+            />
         </div>
     );
 }

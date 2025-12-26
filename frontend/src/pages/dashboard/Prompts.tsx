@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Prompt {
     id: string;
@@ -25,6 +26,7 @@ interface TestResult {
 
 export function PromptsPage() {
     const { getToken } = useAuth();
+    const navigate = useNavigate();
     const [prompts, setPrompts] = useState<Prompt[]>([]);
     const [loading, setLoading] = useState(true);
     const [newPrompt, setNewPrompt] = useState('');
@@ -45,7 +47,37 @@ export function PromptsPage() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
-            setPrompts(data.prompts || []);
+            
+            if (data.prompts && data.prompts.length > 0) {
+                setPrompts(data.prompts);
+            } else {
+                // Fallback: try to load from onboarding if no prompts in database
+                try {
+                    const onboardingRes = await fetch('/api/onboarding/scan-result', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (onboardingRes.ok) {
+                        const onboardingData = await onboardingRes.json();
+                        const onboardingPrompts = onboardingData.scanResult?.scan_data?.prompts || [];
+                        if (onboardingPrompts.length > 0) {
+                            // Convert to Prompt format for display
+                            const formattedPrompts = onboardingPrompts.map((p: string, i: number) => ({
+                                id: `onboarding-${i}`,
+                                prompt_text: p,
+                                keyword: null,
+                                intent: null,
+                                quality_score: null,
+                                is_approved: true,
+                                is_from_onboarding: true,
+                                created_at: new Date().toISOString()
+                            }));
+                            setPrompts(formattedPrompts);
+                        }
+                    }
+                } catch (onboardingError) {
+                    console.warn('Failed to load onboarding prompts:', onboardingError);
+                }
+            }
         } catch (error) {
             console.error('Failed to load prompts:', error);
         } finally {
@@ -193,10 +225,39 @@ export function PromptsPage() {
     return (
         <div style={{ maxWidth: '900px' }}>
             <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>🔍 Prompt Testing</h1>
+                <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>🔍 Prompts</h1>
                 <p style={{ color: '#8b949e' }}>
                     Test how AI assistants respond to search queries about your business.
                 </p>
+            </div>
+
+            {/* Run Full Scan CTA */}
+            <div className="card" style={{ 
+                padding: '1.5rem', 
+                marginBottom: '2rem',
+                background: 'linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(188, 140, 242, 0.1))',
+                border: '1px solid rgba(88, 166, 255, 0.3)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>🚀 Run Full AI Visibility Scan</h3>
+                        <p style={{ color: '#8b949e', fontSize: '0.9rem', margin: 0 }}>
+                            Test all your prompts at once and get a comprehensive AI visibility score with competitor analysis.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate('/dashboard/scan')}
+                        className="btn-primary"
+                        style={{
+                            padding: '0.75rem 2rem',
+                            fontSize: '1rem',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        Start Scan
+                    </button>
+                </div>
             </div>
 
             {/* Add new prompt */}

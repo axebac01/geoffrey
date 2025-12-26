@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
-import { AITrafficCard } from '../../components/AITrafficCard';
-import { OnboardingChecklist } from '../../components/OnboardingChecklist';
+import { AITrafficCard } from '../../components/analytics/AITrafficCard';
+import { OnboardingChecklist } from '../../components/onboarding/OnboardingChecklist';
 
 interface Business {
     id: string;

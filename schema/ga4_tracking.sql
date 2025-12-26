@@ -111,3 +111,4 @@ CREATE POLICY "Users can only access own site_tracking_keys"
 -- 4. Implement rate limiting on /api/track endpoint
 -- 5. ip_hash and user_agent_hash should use a salted hash
 
+

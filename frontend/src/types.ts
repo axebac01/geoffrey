@@ -21,11 +21,15 @@ export interface KeywordPromptPair {
 }
 
 // Competitor with detection metadata
+// NOTE: Backend types.ts is the source of truth - keep in sync
 export interface CompetitorInfo {
   name: string;
-  type: 'direct' | 'indirect';
+  type: 'direct' | 'indirect' | 'market_leader' | 'emerging';
   reason: string;
   confidence?: number;
+  geographicMatch?: 'local' | 'regional' | 'national' | 'international';
+  serviceMatch?: 'high' | 'medium' | 'low';
+  sources?: string[]; // e.g., ['website', 'market_intelligence', 'query_analysis']
 }
 
 export interface EntitySnapshot {
@@ -46,6 +50,8 @@ export interface PromptResult {
   promptText: string;
   responderAnswer: string;
   judgeResult: JudgeOutput;
+  // Aggregated results from multiple runs
+  aggregatedResult?: AggregatedJudgeResult;
 }
 
 export interface JudgeOutput {
@@ -57,20 +63,39 @@ export interface JudgeOutput {
   sentiment?: "positive" | "neutral" | "negative";
 }
 
+export interface AggregatedJudgeResult {
+  // Average across multiple runs
+  mentionRate: number; // 0-1, percentage of runs where brand was mentioned
+  averageRankPosition: number | null; // Average rank when mentioned
+  industryMatchRate: number; // 0-1
+  locationMatchRate: number; // 0-1
+  sentimentDistribution: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  confidenceInterval: {
+    lower: number; // Lower bound of mention rate
+    upper: number; // Upper bound of mention rate
+  };
+  runCount: number; // Number of successful runs
+  totalRuns: number; // Total runs attempted
+}
+
 export interface CompetitorMention {
   competitorName: string;
   isMentioned: boolean;
-  mentionCount: number;
-  averageRankPosition: number | null;
-  mentionRate: number;
+  mentionCount: number; // Number of prompts where this competitor was mentioned
+  averageRankPosition: number | null; // Average rank when mentioned
+  mentionRate: number; // 0-1, percentage of prompts where mentioned
 }
 
 export interface ShareOfVoice {
-  brandMentionRate: number;
+  brandMentionRate: number; // 0-1, percentage of prompts where brand was mentioned
   competitorMentions: CompetitorMention[];
-  totalMentions: number;
-  brandShare: number;
-  topCompetitors: CompetitorMention[];
+  totalMentions: number; // Total mentions across all prompts
+  brandShare: number; // Percentage of total mentions that are the brand
+  topCompetitors: CompetitorMention[]; // Top 5 competitors by mention rate
 }
 
 export interface AnalysisResult {
@@ -83,7 +108,7 @@ export interface AnalysisResult {
     upper: number;
   };
   shareOfVoice?: ShareOfVoice;
-  competitors?: string[];
+  competitors?: string[]; // List of competitors analyzed
 }
 
 export interface FAQItem {

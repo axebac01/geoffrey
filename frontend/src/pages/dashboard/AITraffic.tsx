@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import chatgptLogo from '../../assets/logos/chatgpt.png';
 import perplexityLogo from '../../assets/logos/perplexity.png';
@@ -7,6 +8,12 @@ import geminiLogo from '../../assets/logos/gemini.png';
 import deepseekLogo from '../../assets/logos/deepseek.png';
 import copilotLogo from '../../assets/logos/copilot.png';
 import claudeLogo from '../../assets/logos/claude.png';
+
+// Google Analytics logo - add the file to frontend/src/assets/logos/google-analytics.png
+// If file doesn't exist, emoji fallback will be used
+// To use the logo, uncomment the line below and add the logo file:
+// import googleAnalyticsLogo from '../../assets/logos/google-analytics.png';
+const googleAnalyticsLogo: string | null = null; // Change to import above when logo is added
 
 interface TimeSeriesData {
     date: string;
@@ -25,6 +32,13 @@ interface TimeSeriesResponse {
     data: TimeSeriesData[];
 }
 
+interface GA4Status {
+    connected: boolean;
+    propertyConfigured: boolean;
+    propertyId?: string;
+    propertyName?: string;
+}
+
 const ASSISTANT_CONFIG = {
     chatgpt: { logo: chatgptLogo, color: '#10a37f', name: 'ChatGPT' },
     perplexity: { logo: perplexityLogo, color: '#20b2aa', name: 'Perplexity' },
@@ -36,6 +50,13 @@ const ASSISTANT_CONFIG = {
 
 export function AITrafficPage() {
     const { getToken } = useAuth();
+    const navigate = useNavigate();
+    
+    // GA4 status state
+    const [ga4Status, setGa4Status] = useState<GA4Status | null>(null);
+    const [ga4Loading, setGa4Loading] = useState(true);
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [connectError, setConnectError] = useState<string | null>(null);
     
     // Date range state
     const [startDate, setStartDate] = useState(() => {
@@ -58,10 +79,70 @@ export function AITrafficPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
-    // Fetch time-series data
+    // Load GA4 status on mount
     useEffect(() => {
-        fetchTimeSeriesData();
-    }, [startDate, endDate, groupBy]);
+        loadGA4Status();
+    }, []);
+    
+    // Fetch time-series data (only if GA4 is connected)
+    useEffect(() => {
+        if (ga4Status?.connected && ga4Status?.propertyConfigured) {
+            fetchTimeSeriesData();
+        }
+    }, [startDate, endDate, groupBy, ga4Status]);
+    
+    async function loadGA4Status() {
+        try {
+            const token = await getToken();
+            const res = await fetch('/api/integrations/ga4/status', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setGa4Status(data);
+            } else {
+                setGa4Status({ connected: false, propertyConfigured: false });
+            }
+        } catch (error) {
+            console.error('Failed to load GA4 status:', error);
+            setGa4Status({ connected: false, propertyConfigured: false });
+        } finally {
+            setGa4Loading(false);
+        }
+    }
+    
+    async function handleConnectGA4() {
+        setIsConnecting(true);
+        setConnectError(null);
+        try {
+            const token = await getToken();
+            const res = await fetch('/api/integrations/ga4/connect', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                if (data.redirectUrl) {
+                    window.location.href = data.redirectUrl;
+                } else {
+                    setConnectError('No redirect URL received from server');
+                    setIsConnecting(false);
+                }
+            } else {
+                const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+                setConnectError(error.error || 'Failed to connect to GA4');
+                setIsConnecting(false);
+            }
+        } catch (error: any) {
+            console.error('Failed to connect GA4:', error);
+            setConnectError('Failed to connect. Please try again.');
+            setIsConnecting(false);
+        }
+    }
     
     async function fetchTimeSeriesData() {
         setLoading(true);
@@ -181,6 +262,140 @@ export function AITrafficPage() {
             }
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
+    }
+    
+    // Show loading state while checking GA4 status
+    if (ga4Loading) {
+        return (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                minHeight: '60vh',
+                color: '#8b949e'
+            }}>
+                Loading...
+            </div>
+        );
+    }
+    
+    // Show Connect CTA if GA4 is not connected or property not configured
+    if (!ga4Status?.connected || !ga4Status?.propertyConfigured) {
+        return (
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '60vh',
+                textAlign: 'center',
+                padding: '3rem 1.5rem'
+            }}>
+                {/* Google Analytics Logo or fallback icon */}
+                <div style={{
+                    width: googleAnalyticsLogo ? '120px' : '80px',
+                    height: googleAnalyticsLogo ? '120px' : '80px',
+                    background: googleAnalyticsLogo ? 'transparent' : 'linear-gradient(135deg, #4285f4, #34a853)',
+                    borderRadius: googleAnalyticsLogo ? '0' : '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: googleAnalyticsLogo ? '0' : '2.5rem',
+                    marginBottom: '2rem',
+                    boxShadow: googleAnalyticsLogo ? 'none' : '0 4px 20px rgba(66, 133, 244, 0.3)'
+                }}>
+                    {googleAnalyticsLogo ? (
+                        <img 
+                            src={googleAnalyticsLogo} 
+                            alt="Google Analytics" 
+                            style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain' 
+                            }} 
+                        />
+                    ) : (
+                        '📊'
+                    )}
+                </div>
+                
+                <h1 style={{ 
+                    fontSize: '2rem', 
+                    marginBottom: '1rem',
+                    color: '#c9d1d9',
+                    fontWeight: 600
+                }}>
+                    Connect to Google Analytics
+                </h1>
+                
+                <p style={{
+                    fontSize: '1.1rem',
+                    color: '#8b949e',
+                    maxWidth: '600px',
+                    lineHeight: '1.6',
+                    marginBottom: '2.5rem'
+                }}>
+                    See how many users have found their way to your website from AI tools. 
+                    Compare which AI tools that drive the most traffic.
+                </p>
+                
+                {/* Error display */}
+                {connectError && (
+                    <div style={{
+                        padding: '0.75rem 1rem',
+                        background: '#1c2128',
+                        border: '1px solid #f85149',
+                        borderRadius: '6px',
+                        color: '#f85149',
+                        marginBottom: '1.5rem',
+                        fontSize: '0.9rem',
+                        maxWidth: '500px'
+                    }}>
+                        {connectError}
+                    </div>
+                )}
+                
+                <button
+                    onClick={handleConnectGA4}
+                    disabled={isConnecting}
+                    className="btn-primary"
+                    style={{
+                        padding: '1rem 2.5rem',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        minWidth: '280px',
+                        background: isConnecting 
+                            ? '#30363d' 
+                            : 'linear-gradient(135deg, #4285f4, #34a853)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: isConnecting ? 'not-allowed' : 'pointer',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        opacity: isConnecting ? 0.7 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!isConnecting) {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(66, 133, 244, 0.4)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                    }}
+                >
+                    {isConnecting ? 'Connecting...' : '🔗 Connect to Google Analytics'}
+                </button>
+                
+                <p style={{
+                    fontSize: '0.85rem',
+                    color: '#6e7681',
+                    marginTop: '1.5rem'
+                }}>
+                    One-click connection • Secure OAuth • No code required
+                </p>
+            </div>
+        );
     }
     
     return (

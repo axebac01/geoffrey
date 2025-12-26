@@ -173,7 +173,36 @@ export function ReviewStep() {
 
             if (!businessResponse.ok) {
                 const errorData = await businessResponse.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Failed to save business data');
+                console.error('Business save error:', errorData);
+                // Log the full error for debugging
+                throw new Error(errorData.error || errorData.details || 'Failed to save business data');
+            }
+
+            const businessData = await businessResponse.json();
+
+            // Save prompts to prompts table for use in Prompts page and scans
+            if (prompts.length > 0) {
+                try {
+                    const promptsResponse = await fetch('/api/prompts/bulk', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            prompts: prompts,
+                            businessId: businessData.business?.id || null
+                        })
+                    });
+                    
+                    if (!promptsResponse.ok) {
+                        console.warn('Failed to save prompts to database, but continuing with onboarding');
+                        // Don't fail onboarding if this fails
+                    }
+                } catch (promptError) {
+                    console.warn('Error saving prompts to database:', promptError);
+                    // Don't fail onboarding if this fails
+                }
             }
 
             // Mark onboarding as complete

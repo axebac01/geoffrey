@@ -135,17 +135,23 @@ router.post('/', ClerkExpressRequireAuth() as any, async (req: Request, res: Res
                 plan: plan || 'free',
                 updated_at: new Date().toISOString()
             }, {
-                onConflict: 'user_id'
+                onConflict: 'website'
             })
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            logger.error('Failed to save business - Supabase error', { userId, error: error.message, errorDetails: error });
+            throw error;
+        }
 
         res.json({ business });
     } catch (error: any) {
-        logger.error('Failed to save business', { userId, error: error.message });
-        res.status(500).json({ error: 'Failed to save business' });
+        logger.error('Failed to save business', { userId, error: error.message, errorDetails: error });
+        res.status(500).json({ 
+            error: 'Failed to save business',
+            details: error.message || 'Unknown error'
+        });
     }
 });
 

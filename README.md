@@ -1,212 +1,128 @@
-\# Geoffrey.ai — GEO Micro SaaS (Improved MVP Plan)
+# Geoffrey.ai - AI Visibility & GEO Optimization Platform
 
-\#\# Goal  
-Launch a simple Micro SaaS that:  
-1\) Measures AI visibility (mention frequency \+ context)  
-2\) Generates concrete GEO improvements (FAQ \+ schema \+ copy)
+Geoffrey.ai helps businesses measure and improve their visibility across AI assistants like ChatGPT, Gemini, Perplexity, and Claude. Get actionable insights to optimize your presence in AI-generated responses.
 
-Target user: small business owners (local \+ service businesses)
+## 🚀 Quick Start
 
-\---
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+- Clerk account (for authentication)
+- OpenAI API key
+- Google Cloud project (for GA4 integration)
 
-\#\# MVP Outputs (what users get)  
-\#\#\# 1\) AI Visibility Report  
-\- AI Visibility Score (0–100)  
-\- Coverage: “Mentioned in X/Y prompts”  
-\- Prompt-by-prompt results (collapsed view)  
-\- Notes: “Results can vary slightly by model/version”
+### Installation
 
-\#\#\# 2\) GEO Action Pack  
-\- Long FAQ (15–20 Qs)  
-\- FAQ in HTML \+ Markdown  
-\- FAQPage JSON-LD (copy/paste)
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd geoffrey-mvp
+   ```
 
-\#\#\# 3\) Schema \+ Copy Pack (small but powerful)  
-\- Organization / LocalBusiness JSON-LD  
-\- AI-friendly About snippet (150–250 words)
+2. **Install dependencies**
+   ```bash
+   # Backend dependencies
+   npm install
+   
+   # Frontend dependencies
+   cd frontend
+   npm install
+   cd ..
+   ```
 
-\---
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your credentials
+   ```
 
-\#\# Non-negotiable MVP rules  
-\- Two-pass architecture (Responder \+ Judge)  
-\- No hallucinated business facts (use Entity Snapshot)  
-\- Fixed model settings for stability (low temperature)  
-\- Freemium gating from day 1
+4. **Set up database**
+   - Run SQL migrations in `schema/` directory in your Supabase project
+   - See `docs/DEVELOPMENT.md` for detailed setup instructions
 
-\---
+5. **Start development servers**
+   ```bash
+   npm run dev
+   ```
+   - Backend: http://localhost:3000
+   - Frontend: http://localhost:5173
 
-\#\# Core Concept: Two-Pass Measurement  
-\#\#\# Pass 1: Responder  
-We ask the model the user’s prompt and capture the raw answer text.
+## 📁 Project Structure
 
-\#\#\# Pass 2: Judge  
-We evaluate that answer text against the target company entity.
+```
+geoffrey-mvp/
+├── frontend/          # React + Vite frontend
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── pages/          # Page components
+│   │   ├── lib/            # Utilities (Supabase client, etc.)
+│   │   └── types.ts        # Frontend type definitions
+│   └── package.json
+├── src/               # Backend (Node.js + Express)
+│   ├── routes/       # API route handlers
+│   ├── lib/          # Utilities (encryption, GA4, etc.)
+│   ├── core/         # Core business logic
+│   ├── scanner.ts    # Website scanning logic
+│   └── server.ts     # Express server setup
+├── schema/           # Database migrations (Supabase SQL)
+├── scripts/          # Development/test scripts
+└── docs/             # Documentation
+    ├── PRE_LAUNCH_CHECKLIST.md
+    ├── GA4_SETUP.md
+    └── PLANNING/     # Historical planning documents
+```
 
-This avoids contaminating the answer with evaluation instructions.
+## 🛠 Tech Stack
 
-\---
+### Frontend
+- **React** + **TypeScript**
+- **Vite** (build tool)
+- **Clerk** (authentication)
+- **Supabase** (database client)
+- **React Router** (routing)
+- **Recharts** (data visualization)
 
-\#\# Onboarding (simple \+ required inputs)  
-\#\#\# Step 1: Company Identity  
-\- Company name  
-\- Website (optional but recommended)  
-\- Country \+ city/region
+### Backend
+- **Node.js** + **Express**
+- **TypeScript**
+- **Supabase** (database)
+- **OpenAI API** (GPT-4o-mini)
+- **Google Analytics Data API** (GA4 integration)
+- **Cheerio** (web scraping)
 
-\#\#\# Step 2: Entity Snapshot (anti-hallucination)  
-User enters 3–8 bullets:  
-\- Services offered  
-\- Areas served  
-\- Any trust signals (years, certifications) OPTIONAL
+## 📚 Documentation
 
-Example:  
-\- “Car dealership in Malmö”  
-\- “Sells used and new cars”  
-\- “Offers financing”  
-\- “Serves Skåne”
+- **[Development Guide](docs/DEVELOPMENT.md)** - Setup, workflow, and development practices
+- **[Pre-Launch Checklist](docs/PRE_LAUNCH_CHECKLIST.md)** - Items to complete before production
+- **[GA4 Setup](docs/GA4_SETUP.md)** - Google Analytics integration guide
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and architecture overview
 
-\#\#\# Step 3: Custom Prompts (optional, encouraged)  
-\- Up to 5 prompts (Free: 1–2)  
-\- Show templates and examples  
-\- Validator: max length \+ “real question” format
+## 🔑 Key Features
 
-\---
+- **AI Visibility Scanning** - Measure how often your business is mentioned in AI responses
+- **Competitor Analysis** - Track Share of Voice (SoV) against competitors
+- **Prompt Testing** - Test how your business appears in different AI queries
+- **GEO Optimization** - Get recommendations to improve AI discoverability
+- **GA4 Integration** - Track AI-originated traffic and conversions
 
-\#\# Prompt Packs  
-\#\#\# A) Standard prompts (always run)  
-1\. “List companies in \[INDUSTRY\] in \[COUNTRY\].”  
-2\. “Recommend a \[INDUSTRY\] company in \[CITY\].”  
-3\. “Best \[INDUSTRY\] companies for small businesses in \[COUNTRY\].”  
-4\. “Who offers \[SERVICE\] in \[CITY\]?”  
-5\. “What companies specialize in \[SERVICE\] in \[COUNTRY\]?”
+## 🧪 Development Scripts
 
-\#\#\# B) User prompts  
-Up to 5\. Weighted in scoring.
+```bash
+npm run dev          # Start both frontend and backend
+npm run server       # Start backend only
+npm run frontend      # Start frontend only (from root)
+npm run test-cli      # Run test CLI script
+```
 
-\---
+## 📝 License
 
-\#\# Mention Detection (MVP)  
-\#\#\# Entity normalization  
-Create aliases:  
-\- Exact company name  
-\- Lowercase  
-\- Remove “AB / Ltd / LLC”  
-\- Domain root (example.com)  
-\- Brand name (if provided)
+ISC
 
-\#\#\# Detection method  
-1\) Deterministic match (string/alias)  
-2\) Judge LLM classifies:  
-\- direct / alias / implied / none  
-\- rank position when list exists  
-\- industry \+ location match
+## 🤝 Contributing
 
-\---
+This is a private MVP project. For questions or issues, contact the development team.
 
-\#\# Scoring (stable \+ explainable)  
-\#\#\# Base score from standard prompts (max 80\)  
-For each standard prompt:  
-\- Mentioned: \+10  
-\- Mentioned early (rank 1–3): \+6  
-\- Industry match: \+2  
-\- Location match: \+2  
-(Max 20 per prompt if you run 4 prompts; adjust weights to total 80\)
+---
 
-\#\#\# Custom prompts bonus (max 20\)  
-Each user prompt:  
-\- Mentioned: \+5  
-\- Mentioned early: \+3  
-\- Context match: \+2
-
-Final score \= base \+ bonus (0–100)
-
-Also show:  
-\- Coverage: X/Y prompts mentioned
-
-\---
-
-\#\# GEO Generator (Actions)  
-\#\#\# Outputs  
-1\) FAQ HTML  
-2\) FAQ Markdown  
-3\) FAQPage JSON-LD  
-4\) About snippet  
-5\) Organization/LocalBusiness JSON-LD
-
-\#\#\# Hard rule  
-Use ONLY Entity Snapshot facts.  
-If missing, respond generically and safely.
-
-\---
-
-\#\# Tech Stack (MVP-friendly)  
-\#\#\# UI  
-Lovable  
-\- Landing page  
-\- Onboarding  
-\- Results dashboard  
-\- Downloads/copy buttons  
-\- Upgrade CTA
-
-\#\#\# Backend  
-Google Antigravity  
-\- Workflow: AnalyzeVisibility  
-\- Workflow: GenerateGEOAssets  
-\- Store results in a simple DB
-
-\#\#\# APIs  
-\- OpenAI (required for MVP)  
-\- Gemini (optional post-launch)
-
-\#\#\# Data storage  
-Store:  
-\- user id/email  
-\- entity snapshot  
-\- prompts  
-\- results (answer text \+ judge JSON)  
-\- generated assets  
-\- timestamps
-
-\---
-
-\#\# Build Order (do exactly this)  
-\#\#\# Phase 1 — Prompt \+ Judge (core logic)  
-1\) Implement Responder call  
-2\) Implement Judge call  
-3\) Save judge JSON per prompt  
-4\) Compute score \+ coverage
-
-\#\#\# Phase 2 — GEO generator  
-1\) Generate FAQ (HTML \+ MD)  
-2\) Generate FAQ JSON-LD  
-3\) Generate About snippet  
-4\) Generate Org/LocalBusiness JSON-LD
-
-\#\#\# Phase 3 — UI  
-1\) Onboarding (3 steps)  
-2\) “Analyze” job status  
-3\) Results dashboard  
-4\) Export/copy controls
-
-\#\#\# Phase 4 — Payments (Stripe)  
-\- Free: 1 analysis, 1 FAQ, 2 custom prompts  
-\- Pro: unlimited analyses, 5 custom prompts, exports, history
-
-\---
-
-\#\# QA checklist (before launch)  
-\- Run 10 real companies  
-\- Ensure:  
-  \- No hallucinated facts in FAQ  
-  \- JSON-LD validates  
-  \- Score is stable across runs  
-  \- Results are understandable
-
-\---
-
-\#\# Post-MVP (only after launch)  
-\- Multi-model comparisons (Gemini, Perplexity)  
-\- Scheduled re-checks  
-\- Competitor benchmarking  
-\- CMS plugins (WordPress/Webflow)  
-\- Agency dashboards
-
+**Status:** 🚧 In Active Development

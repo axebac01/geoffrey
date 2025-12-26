@@ -28,10 +28,10 @@ interface AIClicksDetail {
 }
 
 // Assistant logos and colors
-import chatgptLogo from '../assets/logos/chatgpt.png';
-import perplexityLogo from '../assets/logos/perplexity.png';
-import geminiLogo from '../assets/logos/gemini.png';
-import deepseekLogo from '../assets/logos/deepseek.png';
+import chatgptLogo from '../../assets/logos/chatgpt.png';
+import perplexityLogo from '../../assets/logos/perplexity.png';
+import geminiLogo from '../../assets/logos/gemini.png';
+import deepseekLogo from '../../assets/logos/deepseek.png';
 
 const ASSISTANT_CONFIG: Record<string, { 
     logo?: string; 

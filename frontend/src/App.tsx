@@ -15,7 +15,7 @@ import { AITrafficPage } from './pages/dashboard/AITraffic';
 import { CompanyStep } from './pages/onboarding/CompanyStep';
 import { ScanningStep } from './pages/onboarding/ScanningStep';
 import { ReviewStep } from './pages/onboarding/ReviewStep';
-import { OnboardingGuard } from './components/OnboardingGuard';
+import { OnboardingGuard } from './components/onboarding/OnboardingGuard';
 
 function App() {
   const navigate = useNavigate();

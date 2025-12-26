@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { WordPressConnection } from '../../components/integrations/WordPressConnection';
 
 interface GA4Status {
     connected: boolean;
@@ -25,15 +26,25 @@ interface TrackingSite {
     createdAt: string;
 }
 
+interface WordPressSite {
+    id: string;
+    siteUrl: string;
+    siteType: 'wordpress_com' | 'self_hosted';
+    siteName: string;
+    connectedAt: string;
+}
+
 type SettingsTab = 'integrations' | 'profile' | 'data';
 
 export function SettingsPage() {
     const { getToken } = useAuth();
     const { user } = useUser();
+    const { signOut } = useClerk();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const step = searchParams.get('step');
     const errorParam = searchParams.get('error');
+    const tabParam = searchParams.get('tab');
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('integrations');
     const [ga4Status, setGa4Status] = useState<GA4Status | null>(null);
@@ -47,10 +58,17 @@ export function SettingsPage() {
     const [error, setError] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [wordPressSites, setWordPressSites] = useState<WordPressSite[]>([]);
 
     useEffect(() => {
         loadGA4Status();
         loadTrackingSites();
+        loadWordPressStatus();
+        
+        // Set active tab from URL parameter if provided
+        if (tabParam && ['integrations', 'profile', 'data'].includes(tabParam)) {
+            setActiveTab(tabParam as SettingsTab);
+        }
         
         // Check for error in URL params
         if (errorParam === 'oauth_denied') {
@@ -63,12 +81,32 @@ export function SettingsPage() {
             setError('Invalid OAuth request. Please try connecting again.');
         } else if (errorParam === 'oauth_state_expired') {
             setError('OAuth session expired. Please try connecting again.');
+        } else if (errorParam?.startsWith('wordpress_')) {
+            const wpError = errorParam.replace('wordpress_', '');
+            if (wpError === 'oauth_denied') {
+                setError('WordPress OAuth authorization was denied. Please try again.');
+            } else if (wpError === 'oauth_failed') {
+                setError('WordPress OAuth connection failed. Please try again.');
+            } else if (wpError === 'oauth_config_missing') {
+                setError('WordPress OAuth configuration is missing.');
+            } else if (wpError === 'oauth_invalid_request') {
+                setError('Invalid WordPress OAuth request. Please try connecting again.');
+            } else if (wpError === 'oauth_state_expired') {
+                setError('WordPress OAuth session expired. Please try connecting again.');
+            }
+        }
+        
+        // Check for WordPress connection success
+        const wpParam = searchParams.get('wordpress');
+        if (wpParam === 'connected') {
+            loadWordPressStatus();
+            window.history.replaceState({}, '', '/dashboard/settings');
         }
         
         if (errorParam) {
             window.history.replaceState({}, '', '/dashboard/settings');
         }
-    }, [errorParam]);
+    }, [errorParam, tabParam, searchParams]);
 
     useEffect(() => {
         if (step === 'select-property') {
@@ -139,6 +177,9 @@ export function SettingsPage() {
 
             await loadGA4Status();
             window.history.replaceState({}, '', '/dashboard/settings');
+            
+            // Navigate to AI Traffic page after successful save
+            navigate('/dashboard/ai-traffic');
         } catch (error) {
             console.error('Failed to save property:', error);
         } finally {
@@ -228,6 +269,80 @@ export function SettingsPage() {
         navigator.clipboard.writeText(text);
         setCopied(id);
         setTimeout(() => setCopied(null), 2000);
+    }
+
+    async function loadWordPressStatus() {
+        try {
+            const token = await getToken();
+            const res = await fetch('/api/integrations/wordpress/status', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setWordPressSites(data.sites || []);
+        } catch (error) {
+            console.error('Failed to load WordPress status:', error);
+        }
+    }
+
+    async function connectWordPress(siteType: 'wordpress_com' | 'self_hosted') {
+        try {
+            const token = await getToken();
+            const res = await fetch(`http://localhost:3000/api/integrations/wordpress/connect?siteType=${siteType}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                if (data.redirectUrl) {
+                    window.location.href = data.redirectUrl;
+                } else {
+                    setError('No redirect URL received from server');
+                }
+            } else {
+                const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+                setError(error.error || 'Failed to connect to WordPress');
+            }
+        } catch (error: any) {
+            console.error('Failed to connect WordPress:', error);
+            setError('Failed to connect. Please try again.');
+        }
+    }
+
+    async function disconnectWordPress(siteId: string) {
+        try {
+            const token = await getToken();
+            await fetch(`http://localhost:3000/api/integrations/wordpress/${siteId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            await loadWordPressStatus();
+        } catch (error) {
+            console.error('Failed to disconnect WordPress:', error);
+            setError('Failed to disconnect WordPress site');
+        }
+    }
+
+    async function connectWordPressManual(siteUrl: string, applicationPassword: string, siteName?: string) {
+        const token = await getToken();
+        const res = await fetch('http://localhost:3000/api/integrations/wordpress/connect/manual', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ siteUrl, applicationPassword, siteName })
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(error.error || 'Failed to connect WordPress site');
+        }
+
+        await loadWordPressStatus();
     }
 
     if (loading) {
@@ -467,8 +582,16 @@ export function SettingsPage() {
                         )}
                     </section>
 
+                    {/* WordPress Integration Section */}
+                    <WordPressConnection
+                        sites={wordPressSites}
+                        onConnect={connectWordPress}
+                        onDisconnect={disconnectWordPress}
+                        onManualConnect={connectWordPressManual}
+                    />
+
                     {/* Direct Tracking Script Section */}
-                    <section className="card" style={{ padding: '1.5rem' }}>
+                    <section className="card" style={{ padding: '1.5rem', marginTop: '2rem' }}>
                         <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span style={{ fontSize: '1.5rem' }}>📝</span>
                             Direct Tracking Script
@@ -630,6 +753,56 @@ export function SettingsPage() {
                             </p>
                         </div>
                     </div>
+                </section>
+
+                {/* Sign Out Section */}
+                <section className="card" style={{ 
+                    padding: '1.5rem', 
+                    marginTop: '2rem',
+                    border: '1px solid #30363d'
+                }}>
+                    <h2 style={{ 
+                        fontSize: '1.2rem', 
+                        marginBottom: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <span style={{ fontSize: '1.5rem' }}>🚪</span>
+                        Sign Out
+                    </h2>
+                    <p style={{ color: '#8b949e', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                        Sign out of your account. You can sign back in anytime.
+                    </p>
+                    <button
+                        onClick={async () => {
+                            await signOut();
+                            navigate('/');
+                        }}
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            background: 'rgba(48, 54, 61, 0.5)',
+                            border: '1px solid #30363d',
+                            borderRadius: '8px',
+                            color: '#c9d1d9',
+                            cursor: 'pointer',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(218, 54, 51, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(218, 54, 51, 0.3)';
+                            e.currentTarget.style.color = '#f85149';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(48, 54, 61, 0.5)';
+                            e.currentTarget.style.borderColor = '#30363d';
+                            e.currentTarget.style.color = '#c9d1d9';
+                        }}
+                    >
+                        🚪 Sign Out
+                    </button>
                 </section>
 
                 {/* Reset Onboarding for Testing - More Prominent */}

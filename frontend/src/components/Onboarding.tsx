@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import type { EntitySnapshot } from '../types';
-import { ScanningLoadingScreen } from './ScanningLoadingScreen';
-import { ProfileReview } from './ProfileReview';
-import { PromptsReview } from './PromptsReview';
-import { CompetitorsReview } from './CompetitorsReview';
+import { ScanningLoadingScreen } from './onboarding/ScanningLoadingScreen';
+import { ProfileReview } from './onboarding/ProfileReview';
+import { PromptsReview } from './onboarding/PromptsReview';
+import { CompetitorsReview } from './onboarding/CompetitorsReview';
 
 interface OnboardingProps {
     onComplete: (snapshot: EntitySnapshot, prompts: string[], competitors: string[]) => void;

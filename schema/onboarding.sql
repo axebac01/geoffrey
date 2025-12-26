@@ -132,6 +132,15 @@ BEGIN
         ALTER TABLE businesses ADD COLUMN subscription_status TEXT DEFAULT 'trial'
             CHECK (subscription_status IN ('trial', 'active', 'cancelled', 'expired'));
     END IF;
+    
+    -- Add UNIQUE constraint on user_id if it doesn't exist
+    -- This allows upsert to work with onConflict: 'user_id'
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'businesses_user_id_unique'
+    ) THEN
+        ALTER TABLE businesses ADD CONSTRAINT businesses_user_id_unique UNIQUE (user_id);
+    END IF;
 END $$;
 
 -- ============================================

@@ -9,3 +9,4 @@ Place the following logo files in this directory:
 
 The logos should be optimized for web use (SVG preferred, or PNG with transparent background).
 
+
