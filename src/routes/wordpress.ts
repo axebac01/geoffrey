@@ -322,7 +322,7 @@ router.get('/status', ClerkExpressRequireAuth() as any, async (req: Request, res
         
         res.json({
             connected: (integrations || []).length > 0,
-            sites: (integrations || []).map(integration => ({
+            sites: (integrations || []).map((integration: any) => ({
                 id: integration.id,
                 siteUrl: integration.site_url,
                 siteType: integration.site_type,
