@@ -75,7 +75,7 @@ export function WordPressPublishModal({
 
         try {
             const token = await getToken();
-            const res = await fetch('http://localhost:3000/api/integrations/wordpress/publish', {
+            const res = await fetch(getApiUrl('/api/integrations/wordpress/publish'), {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
