@@ -139,8 +139,8 @@ app.post("/api/scan-website", async (req: Request, res: Response) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`\n🚀 Geoffrey API Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n🚀 Geoffrey API Server running on http://0.0.0.0:${PORT}`);
     console.log(`   - POST /api/analyze (Protected)`);
     console.log(`   - POST /api/generate (Protected)`);
     console.log(`   - POST /api/scan-website (Public)`);
