@@ -288,7 +288,7 @@ export function SettingsPage() {
     async function connectWordPress(siteType: 'wordpress_com' | 'self_hosted') {
         try {
             const token = await getToken();
-            const res = await fetch(`http://localhost:3000/api/integrations/wordpress/connect?siteType=${siteType}`, {
+            const res = await fetch(getApiUrl(`/api/integrations/wordpress/connect?siteType=${siteType}`), {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -316,7 +316,7 @@ export function SettingsPage() {
     async function disconnectWordPress(siteId: string) {
         try {
             const token = await getToken();
-            await fetch(`http://localhost:3000/api/integrations/wordpress/${siteId}`, {
+            await fetch(getApiUrl(`/api/integrations/wordpress/${siteId}`), {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -329,7 +329,7 @@ export function SettingsPage() {
 
     async function connectWordPressManual(siteUrl: string, applicationPassword: string, siteName?: string) {
         const token = await getToken();
-        const res = await fetch('http://localhost:3000/api/integrations/wordpress/connect/manual', {
+        const res = await fetch(getApiUrl('/api/integrations/wordpress/connect/manual'), {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -519,7 +519,7 @@ export function SettingsPage() {
                                 onClick={async () => {
                                     try {
                                         const token = await getToken();
-                                        const res = await fetch('http://localhost:3000/api/integrations/ga4/connect', {
+                                        const res = await fetch(getApiUrl('/api/integrations/ga4/connect'), {
                                             method: 'GET',
                                             headers: {
                                                 'Authorization': `Bearer ${token}`,
