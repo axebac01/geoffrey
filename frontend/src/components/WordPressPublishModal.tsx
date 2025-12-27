@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '../lib/api';
 import { useAuth } from '@clerk/clerk-react';
 
 interface WordPressSite {
@@ -48,7 +49,7 @@ export function WordPressPublishModal({
     async function loadSites() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/integrations/wordpress/status', {
+            const res = await fetch(getApiUrl('/api/integrations/wordpress/status'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();

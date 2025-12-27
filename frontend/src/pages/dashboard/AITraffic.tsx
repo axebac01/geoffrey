@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { getApiUrl } from '../../lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import chatgptLogo from '../../assets/logos/chatgpt.png';
 import perplexityLogo from '../../assets/logos/perplexity.png';
@@ -92,7 +93,7 @@ export function AITrafficPage() {
     async function loadGA4Status() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/integrations/ga4/status', {
+            const res = await fetch(getApiUrl('/api/integrations/ga4/status'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -114,7 +115,7 @@ export function AITrafficPage() {
         setConnectError(null);
         try {
             const token = await getToken();
-            const res = await fetch('/api/integrations/ga4/connect', {
+            const res = await fetch(getApiUrl('/api/integrations/ga4/connect'), {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,

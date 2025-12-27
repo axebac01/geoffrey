@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getApiUrl } from '../../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { AuthLayout } from '../../components/layouts/AuthLayout';
@@ -53,7 +54,7 @@ export function ReviewStep() {
                 }
 
                 // Check onboarding status
-                const res = await fetch('/api/onboarding/status', {
+                const res = await fetch(getApiUrl('/api/onboarding/status'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -69,7 +70,7 @@ export function ReviewStep() {
                 }
 
                 // Get scan result from backend
-                const scanRes = await fetch('/api/onboarding/scan-result', {
+                const scanRes = await fetch(getApiUrl('/api/onboarding/scan-result'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -134,7 +135,7 @@ export function ReviewStep() {
             };
 
             // Store the final reviewed data in backend
-            await fetch('/api/onboarding/scan-result', {
+            await fetch(getApiUrl('/api/onboarding/scan-result'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -151,7 +152,7 @@ export function ReviewStep() {
             });
 
             // Store business data in Supabase
-            const businessResponse = await fetch('/api/businesses', {
+            const businessResponse = await fetch(getApiUrl('/api/businesses'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -180,7 +181,7 @@ export function ReviewStep() {
             // Save prompts to prompts table for use in Prompts page and scans
             if (prompts.length > 0) {
                 try {
-                    const promptsResponse = await fetch('/api/prompts/bulk', {
+                    const promptsResponse = await fetch(getApiUrl('/api/prompts/bulk'), {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -203,7 +204,7 @@ export function ReviewStep() {
             }
 
             // Mark onboarding as complete
-            const statusResponse = await fetch('/api/onboarding/status', {
+            const statusResponse = await fetch(getApiUrl('/api/onboarding/status'), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

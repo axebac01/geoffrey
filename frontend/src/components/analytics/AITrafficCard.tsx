@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '../../lib/api';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -76,7 +77,7 @@ export function AITrafficCard({ compact = false }: Props) {
     async function loadSummary() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/metrics/ai-clicks/summary', {
+            const res = await fetch(getApiUrl('/api/metrics/ai-clicks/summary'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             

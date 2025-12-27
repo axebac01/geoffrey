@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '../../lib/api';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -81,7 +82,7 @@ export function OnboardingChecklist() {
     async function loadProgress() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/geo/checklist', {
+            const res = await fetch(getApiUrl('/api/geo/checklist'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();

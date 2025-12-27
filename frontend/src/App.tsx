@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { getApiUrl } from './lib/api';
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { SignedIn, SignedOut, RedirectToSignIn, useAuth } from "@clerk/clerk-react";
 import SignInPage from './pages/auth/SignInPage';
@@ -34,7 +35,7 @@ function App() {
       
       try {
         const token = await getToken();
-        const res = await fetch('/api/onboarding/next-step', {
+        const res = await fetch(getApiUrl('/api/onboarding/next-step'), {
           headers: { Authorization: `Bearer ${token}` }
         });
         

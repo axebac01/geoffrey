@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WordPressConnection } from '../../components/integrations/WordPressConnection';
+import { getApiUrl } from '../../lib/api';
 
 interface GA4Status {
     connected: boolean;
@@ -117,7 +118,7 @@ export function SettingsPage() {
     async function loadGA4Status() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/integrations/ga4/status', {
+            const res = await fetch(getApiUrl('/api/integrations/ga4/status'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -132,7 +133,7 @@ export function SettingsPage() {
     async function loadProperties() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/integrations/ga4/properties', {
+            const res = await fetch(getApiUrl('/api/integrations/ga4/properties'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -145,7 +146,7 @@ export function SettingsPage() {
     async function loadTrackingSites() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/tracking/sites', {
+            const res = await fetch(getApiUrl('/api/tracking/sites'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -163,7 +164,7 @@ export function SettingsPage() {
             const token = await getToken();
             const property = properties.find(p => p.propertyId === selectedProperty);
             
-            await fetch('/api/integrations/ga4/property', {
+            await fetch(getApiUrl('/api/integrations/ga4/property'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -192,7 +193,7 @@ export function SettingsPage() {
 
         try {
             const token = await getToken();
-            await fetch('/api/integrations/ga4/disconnect', {
+            await fetch(getApiUrl('/api/integrations/ga4/disconnect'), {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -208,7 +209,7 @@ export function SettingsPage() {
 
         try {
             const token = await getToken();
-            await fetch('/api/tracking/sites', {
+            await fetch(getApiUrl('/api/tracking/sites'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -250,7 +251,7 @@ export function SettingsPage() {
         setIsDeleting(true);
         try {
             const token = await getToken();
-            await fetch('/api/user/data', {
+            await fetch(getApiUrl('/api/user/data'), {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -274,7 +275,7 @@ export function SettingsPage() {
     async function loadWordPressStatus() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/integrations/wordpress/status', {
+            const res = await fetch(getApiUrl('/api/integrations/wordpress/status'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -833,7 +834,7 @@ export function SettingsPage() {
                             }
                             try {
                                 const token = await getToken();
-                                const res = await fetch('/api/onboarding/reset', {
+                                const res = await fetch(getApiUrl('/api/onboarding/reset'), {
                                     method: 'POST',
                                     headers: { Authorization: `Bearer ${token}` }
                                 });

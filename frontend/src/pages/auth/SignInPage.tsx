@@ -1,4 +1,5 @@
 import { SignIn, useAuth } from "@clerk/clerk-react";
+import { getApiUrl } from '../../lib/api';
 import { AuthLayout } from "../../components/layouts/AuthLayout";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,7 +14,7 @@ export default function SignInPage() {
 
             try {
                 const token = await getToken();
-                const res = await fetch('/api/onboarding/next-step', {
+                const res = await fetch(getApiUrl('/api/onboarding/next-step'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 

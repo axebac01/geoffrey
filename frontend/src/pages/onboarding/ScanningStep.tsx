@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { AuthLayout } from '../../components/layouts/AuthLayout';
+import { getApiUrl } from '../../lib/api';
 
 const scanningSteps = [
     { id: 1, label: 'Fetching website content', icon: '🌐', estimatedTime: 2 },
@@ -107,7 +108,7 @@ export function ScanningStep() {
         try {
             const token = await getToken();
             
-            const res = await fetch('/api/scan-website', {
+            const res = await fetch(getApiUrl('/api/scan-website'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -124,7 +125,7 @@ export function ScanningStep() {
             const data = await res.json();
             
             // Store scan results in backend for review step
-            await fetch('/api/onboarding/scan-result', {
+            await fetch(getApiUrl('/api/onboarding/scan-result'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -134,7 +135,7 @@ export function ScanningStep() {
             });
             
             // Update onboarding progress
-            await fetch('/api/onboarding/status', {
+            await fetch(getApiUrl('/api/onboarding/status'), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

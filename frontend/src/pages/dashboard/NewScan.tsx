@@ -5,6 +5,7 @@ import { Results } from '../../components/results/Results';
 import type { EntitySnapshot, AnalysisResult, GeneratorOutput } from '../../types';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { supabase } from '../../lib/supabase';
+import { getApiUrl } from '../../lib/api';
 
 export function NewScanPage() {
     const { getToken } = useAuth();
@@ -27,7 +28,7 @@ export function NewScanPage() {
 
                 // 1. Fetch prompts from database
                 let promptsToUse: string[] = [];
-                const promptsRes = await fetch('/api/prompts', {
+                const promptsRes = await fetch(getApiUrl('/api/prompts'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -38,7 +39,7 @@ export function NewScanPage() {
 
                 // 2. Fallback to onboarding prompts if none in database
                 if (promptsToUse.length === 0) {
-                    const onboardingRes = await fetch('/api/onboarding/scan-result', {
+                    const onboardingRes = await fetch(getApiUrl('/api/onboarding/scan-result'), {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     if (onboardingRes.ok) {
@@ -49,7 +50,7 @@ export function NewScanPage() {
 
                 // 3. Fetch business/snapshot data
                 let businessSnapshot: EntitySnapshot | null = null;
-                const profileRes = await fetch('/api/user/profile', {
+                const profileRes = await fetch(getApiUrl('/api/user/profile'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -71,7 +72,7 @@ export function NewScanPage() {
 
                 // 4. Fallback to onboarding snapshot if no business data
                 if (!businessSnapshot) {
-                    const onboardingRes = await fetch('/api/onboarding/scan-result', {
+                    const onboardingRes = await fetch(getApiUrl('/api/onboarding/scan-result'), {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     if (onboardingRes.ok) {
@@ -118,7 +119,7 @@ export function NewScanPage() {
 
         try {
             const token = await getToken();
-            const res = await fetch('/api/analyze', {
+            const res = await fetch(getApiUrl('/api/analyze'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -188,7 +189,7 @@ export function NewScanPage() {
         setIsGenerating(true);
         try {
             const token = await getToken();
-            const res = await fetch('/api/generate', {
+            const res = await fetch(getApiUrl('/api/generate'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

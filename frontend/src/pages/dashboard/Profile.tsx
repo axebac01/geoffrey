@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser, UserButton } from '@clerk/clerk-react';
+import { getApiUrl } from '../../lib/api';
 
 interface BusinessProfile {
     id: string;
@@ -35,7 +36,7 @@ export function ProfilePage() {
     async function loadProfile() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/user/profile', {
+            const res = await fetch(getApiUrl('/api/user/profile'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -60,7 +61,7 @@ export function ProfilePage() {
         setSaving(true);
         try {
             const token = await getToken();
-            const res = await fetch('/api/businesses', {
+            const res = await fetch(getApiUrl('/api/businesses'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ export function ProfilePage() {
                 setIsEditing(false);
                 
                 // Update checklist
-                await fetch('/api/geo/checklist', {
+                await fetch(getApiUrl('/api/geo/checklist'), {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',

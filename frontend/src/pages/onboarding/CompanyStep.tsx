@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getApiUrl } from '../../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { AuthLayout } from '../../components/layouts/AuthLayout';
@@ -26,7 +27,7 @@ export function CompanyStep() {
             const token = await getToken();
             
             // Save company data to backend
-            await fetch('/api/onboarding/company-data', {
+            await fetch(getApiUrl('/api/onboarding/company-data'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ export function CompanyStep() {
             });
 
             // Update onboarding progress
-            await fetch('/api/onboarding/status', {
+            await fetch(getApiUrl('/api/onboarding/status'), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

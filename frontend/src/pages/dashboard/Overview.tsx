@@ -3,6 +3,7 @@ import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { AITrafficCard } from '../../components/analytics/AITrafficCard';
 import { OnboardingChecklist } from '../../components/onboarding/OnboardingChecklist';
+import { getApiUrl } from '../../lib/api';
 
 interface Business {
     id: string;
@@ -43,7 +44,7 @@ export function DashboardOverview() {
 
                 // Fetch business/profile data via API
                 let businessData: Business | null = null;
-                const profileRes = await fetch('/api/user/profile', {
+                const profileRes = await fetch(getApiUrl('/api/user/profile'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (profileRes.ok) {
@@ -64,7 +65,7 @@ export function DashboardOverview() {
                 }
 
                 // Fetch onboarding scan result (prompts, competitors)
-                const scanResultRes = await fetch('/api/onboarding/scan-result', {
+                const scanResultRes = await fetch(getApiUrl('/api/onboarding/scan-result'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (scanResultRes.ok) {

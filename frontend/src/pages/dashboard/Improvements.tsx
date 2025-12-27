@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { WordPressPublishModal } from '../../components/WordPressPublishModal';
+import { getApiUrl } from '../../lib/api';
 
 interface GeoAsset {
     id: string;
@@ -42,7 +43,7 @@ export function ImprovementsPage() {
     async function loadAssets() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/geo/assets', {
+            const res = await fetch(getApiUrl('/api/geo/assets'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl } from '../../lib/api';
 
 interface Prompt {
     id: string;
@@ -43,7 +44,7 @@ export function PromptsPage() {
     async function loadPrompts() {
         try {
             const token = await getToken();
-            const res = await fetch('/api/prompts', {
+            const res = await fetch(getApiUrl('/api/prompts'), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -53,7 +54,7 @@ export function PromptsPage() {
             } else {
                 // Fallback: try to load from onboarding if no prompts in database
                 try {
-                    const onboardingRes = await fetch('/api/onboarding/scan-result', {
+                    const onboardingRes = await fetch(getApiUrl('/api/onboarding/scan-result'), {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     if (onboardingRes.ok) {
@@ -91,7 +92,7 @@ export function PromptsPage() {
 
         try {
             const token = await getToken();
-            const res = await fetch('/api/prompts', {
+            const res = await fetch(getApiUrl('/api/prompts'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -132,7 +133,7 @@ export function PromptsPage() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`/api/prompts/${id}/test`, {
+            const res = await fetch(getApiUrl(`/api/prompts/${id}/test`), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -160,7 +161,7 @@ export function PromptsPage() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`/api/prompts/${id}/history`, {
+            const res = await fetch(getApiUrl(`/api/prompts/${id}/history`), {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();

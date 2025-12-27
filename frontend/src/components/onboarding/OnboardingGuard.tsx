@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getApiUrl } from '../../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 
@@ -17,7 +18,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
 
             try {
                 const token = await getToken();
-                const res = await fetch('/api/onboarding/next-step', {
+                const res = await fetch(getApiUrl('/api/onboarding/next-step'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
